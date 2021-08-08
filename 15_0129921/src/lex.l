@@ -1,0 +1,135 @@
+/* Options to generate the output file without the need of extra declarations */
+%option noinput nounput
+%option noyywrap
+%{
+/* Declarations */
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+int current_line = 1;
+int current_col = 1;
+int previous_col;
+
+static void update_position(int);
+%}
+
+/* Directives for comment block or comment lines */
+%x COMMENTLINE
+%x COMMENTBLOCK
+
+/* REGEX declarations to increase code readability */
+DELIM        [ \t\n]
+WHITESPACE   {DELIM}+
+DIGIT        [0-9]
+LETTER       [a-zA-Z]
+ID           ({LETTER}|"_")+({LETTER}|{DIGIT}|"_")*
+INT_CONST    [+-]?{DIGIT}+
+FLOAT_CONST  [+-]?{DIGIT}*(\.{DIGIT}+)
+LIST_CONST   NIL
+STRING_CONST \"(\\.|[^"\\])*\"
+
+%%
+  /*Ignore whitespaces*/
+{WHITESPACE}                { update_position(0); }
+
+  /* Multiline Comments */
+"/*"                        { update_position(0); BEGIN(COMMENTBLOCK); }
+<COMMENTBLOCK>"*/"          { update_position(0); BEGIN(INITIAL); }
+<COMMENTBLOCK>\n            { update_position(0); }
+<COMMENTBLOCK>.             { update_position(0); }
+
+  /* Single line comments */
+"//"                        { update_position(0); BEGIN(COMMENTLINE); }
+<COMMENTLINE>\n             { update_position(0); BEGIN(INITIAL); }
+<COMMENTLINE>.              { update_position(0); }
+
+  /* Data types are int, float elem and set */
+"int"                       { update_position(1); printf("<INT_TYPE,%s>\n", yytext); }
+"float"                     { update_position(1); printf("<FLOAT_TYPE,%s>\n", yytext); }
+"int list"                  { update_position(1); printf("<INT_LIST_TYPE,%s>\n", yytext); }
+"float list"                { update_position(1); printf("<FLOAT_LIST_TYPE,%s>\n", yytext); }
+
+  /* Char os string constant with single or double quotes */
+
+  /* Constants */
+{INT_CONST}                 { update_position(1); printf("<INT_CONST,%s>\n", yytext); }
+{FLOAT_CONST}               { update_position(1); printf("<FLOAT_CONST,%s>\n", yytext); }
+{LIST_CONST}                { update_position(1); printf("<LIST_CONST,%s>\n", yytext); }
+{STRING_CONST}              { update_position(1); printf("<STRING_CONST,%s>\n", yytext); }
+
+
+  /* Definition of operators */
+"+"                         { update_position(1); printf("<ADD_OP,%s>\n", yytext); }
+"-"                         { update_position(1); printf("<SUB_OP,%s>\n", yytext); }
+"*"                         { update_position(1); printf("<MULT_OP,%s>\n", yytext); }
+"/"                         { update_position(1); printf("<DIV_OP,%s>\n", yytext); }
+
+  /* Logical operators */
+"!"                         { update_position(1); printf("<NOT_OP,%s>\n", yytext); }
+"||"                        { update_position(1); printf("<OR_OP,%s>\n", yytext); }
+"&&"                        { update_position(1); printf("<AND_OP,%s>\n", yytext); }
+
+  /* Relational operators */
+"<"                         { update_position(1); printf("<LESSTHAN_OP,%s>\n", yytext); }
+"<="                        { update_position(1); printf("<LESSEQUAL_OP,%s>\n", yytext); }
+">"                         { update_position(1); printf("<GREATERTHAN_OP,%s>\n", yytext); }
+">="                        { update_position(1); printf("<GREATEREQUAl_OP,%s>\n", yytext); }
+"!="                        { update_position(1); printf("<NOTEQUAL_OP,%s>\n", yytext); }
+"=="                        { update_position(1); printf("<COMPARISON_OP,%s>\n", yytext); }
+
+  /* Delimiters, assignments and block symbols */
+"{"                         { update_position(1); printf("<LBRACE,%s>\n", yytext); }
+"}"                         { update_position(1); printf("<RBRACE,%s>\n", yytext); }
+"("                         { update_position(1);printf("<LPARENTHESES,%s>\n", yytext); }
+")"                         { update_position(1); printf("<RPARENTHESES,%s>\n", yytext); }
+";"                         { update_position(1); printf("<SEMICOLON,%s>\n", yytext); }
+"="                         { update_position(1); printf("<ASSIGNMENT,%s>\n", yytext); }
+","                         { update_position(1); printf("<COMMA,%s>\n", yytext); }
+
+  /* Flow control */
+"for"                       { update_position(1); printf("<FOR_KW,%s>\n", yytext); }
+"if"                        { update_position(1); printf("<IF_KW,%s>\n", yytext); }
+"else"                      { update_position(1); printf("<ELSE_KW,%s>\n", yytext); }
+"return"                    { update_position(1); printf("<RETURN_KW,%s>\n", yytext); }
+
+  /* Input and Output */
+"read"                      { update_position(1); printf("<READ_KW,%s>\n", yytext); }
+"write"                     { update_position(1); printf("<WRITE_KW,%s>\n", yytext); }
+"writeln"                   { update_position(1); printf("<WRITELN_KW,%s>\n", yytext); }
+  
+  /* ID Definition */
+{ID}                        {
+                              update_position(1);
+                              printf("<ID,%s>\n", yytext);
+                            }
+
+  /* Error handling */
+.                           {
+                              update_position(0);
+                              printf("Token not recognized: \"%s\". Line: %d, Column: %d\n", yytext, current_line, current_col);
+                            }
+
+%%
+
+/* Updates line in case of newline and updates column otherwise */
+static void update_position(int should_print_line_number) {
+  if (should_print_line_number) {
+    printf("%d: ", current_line);
+  }
+  previous_col = current_col;
+  for (int nsymbol = 0; nsymbol < yyleng; ++nsymbol) {
+    if (yytext[nsymbol] == '\n') {
+      current_col = 1;
+      previous_col = 1;
+      current_line++;
+    } else {
+      current_col++;
+    }
+  }
+}
+
+int main() {
+  yylex();
+  return 0;
+}
