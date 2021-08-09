@@ -2,6 +2,9 @@
 FLEX_OBJS = src/*.l
 C_OBJS = src/*.c
 
+#FLEX specifies flex
+FLEX = flex
+
 #CC specifies which compiler we're using
 CC = gcc
 
@@ -14,5 +17,5 @@ OBJ_NAME = lex
 
 #This is the target that compiles our executable
 all : $(FLEX_OBJS) $(C_OBJS) 
-	$(FLEX) (FLEX_OBJS)
+	$(FLEX) $(FLEX_OBJS)
 	$(CC) $(C_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
