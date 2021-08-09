@@ -28,14 +28,19 @@ ID           ({LETTER}|"_")+({LETTER}|{DIGIT}|"_")*
 INT_CONST    [+-]?{DIGIT}+
 FLOAT_CONST  [+-]?{DIGIT}*(\.{DIGIT}+)
 LIST_CONST   NIL
-STRING_CONST \"(\\.|[^"\\])*\"
+STRING_CONST ["]([^"\\\n]|\\(.|\n))*["]
+UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 
 %%
   /*Ignore whitespaces*/
 {WHITESPACE}                { update_position(0); }
 
   /* Multiline Comments */
-"/*"                        { comment_block_line_begin = current_line; update_position(0); BEGIN(COMMENT_BLOCK); }
+"/*"                        { 
+                              comment_block_line_begin = current_line;
+                              update_position(0);
+                              BEGIN(COMMENT_BLOCK);
+                            }
 <COMMENT_BLOCK>"*/"         { update_position(0); BEGIN(INITIAL); }
 <COMMENT_BLOCK>\n           { update_position(0); }
 <COMMENT_BLOCK>.            { update_position(0); }
@@ -44,7 +49,10 @@ STRING_CONST \"(\\.|[^"\\])*\"
   https://westes.github.io/flex/manual/EOF.html
   https://stackoverflow.com/questions/29991073/checking-unfinished-comments-in-flex
    */
-<COMMENT_BLOCK><<EOF>>      { printf("/* neverending comment block at line %d\n", comment_block_line_begin); yyterminate();}
+<COMMENT_BLOCK><<EOF>>      { 
+                              printf("/* never ending comment block at line %d\n", comment_block_line_begin);
+                              yyterminate();
+                            }
 
   /* Single line comments */
 "//"                        { update_position(0); BEGIN(COMMENT_LINE); }
@@ -64,6 +72,10 @@ STRING_CONST \"(\\.|[^"\\])*\"
 {FLOAT_CONST}               { update_position(1); printf("<FLOAT_CONST,%s>\n", yytext); }
 {LIST_CONST}                { update_position(1); printf("<LIST_CONST,%s>\n", yytext); }
 {STRING_CONST}              { update_position(1); printf("<STRING_CONST,%s>\n", yytext); }
+{UNIFINISHED_STRING_CONST}  { 
+                              printf("Error: \" at line %d, column %d does not have a closing \"\n", current_line, current_col);
+                              update_position(0);
+                            }
 
 
   /* Definition of operators */
