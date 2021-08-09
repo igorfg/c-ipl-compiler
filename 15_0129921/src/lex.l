@@ -10,13 +10,14 @@
 int current_line = 1;
 int current_col = 1;
 int previous_col;
+int comment_block_line_begin;
 
 static void update_position(int);
 %}
 
 /* Directives for comment block or comment lines */
-%x COMMENTLINE
-%x COMMENTBLOCK
+%x COMMENT_LINE
+%x COMMENT_BLOCK
 
 /* REGEX declarations to increase code readability */
 DELIM        [ \t\n]
@@ -34,15 +35,21 @@ STRING_CONST \"(\\.|[^"\\])*\"
 {WHITESPACE}                { update_position(0); }
 
   /* Multiline Comments */
-"/*"                        { update_position(0); BEGIN(COMMENTBLOCK); }
-<COMMENTBLOCK>"*/"          { update_position(0); BEGIN(INITIAL); }
-<COMMENTBLOCK>\n            { update_position(0); }
-<COMMENTBLOCK>.             { update_position(0); }
+"/*"                        { comment_block_line_begin = current_line; update_position(0); BEGIN(COMMENT_BLOCK); }
+<COMMENT_BLOCK>"*/"         { update_position(0); BEGIN(INITIAL); }
+<COMMENT_BLOCK>\n           { update_position(0); }
+<COMMENT_BLOCK>.            { update_position(0); }
+  /*
+  If it reaches EOF while still in a comment block it notifies a special error
+  https://westes.github.io/flex/manual/EOF.html
+  https://stackoverflow.com/questions/29991073/checking-unfinished-comments-in-flex
+   */
+<COMMENT_BLOCK><<EOF>>      { printf("/* neverending comment block at line %d\n", comment_block_line_begin); yyterminate();}
 
   /* Single line comments */
-"//"                        { update_position(0); BEGIN(COMMENTLINE); }
-<COMMENTLINE>\n             { update_position(0); BEGIN(INITIAL); }
-<COMMENTLINE>.              { update_position(0); }
+"//"                        { update_position(0); BEGIN(COMMENT_LINE); }
+<COMMENT_LINE>\n            { update_position(0); BEGIN(INITIAL); }
+<COMMENT_LINE>.             { update_position(0); }
 
   /* Data types are int, float elem and set */
 "int"                       { update_position(1); printf("<INT_TYPE,%s>\n", yytext); }
