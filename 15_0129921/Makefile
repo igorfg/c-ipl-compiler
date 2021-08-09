@@ -12,8 +12,8 @@ CC = gcc
 # -w suppresses all warnings
 COMPILER_FLAGS = -Wall
 
-#OBJ_NAME specifies the name of our exectuable
-OBJ_NAME = lex
+#OBJ_NAME specifies the name of our executable
+OBJ_NAME = tradutor
 
 #This is the target that compiles our executable
 all:
