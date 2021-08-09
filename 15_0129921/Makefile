@@ -1,6 +1,6 @@
 #OBJS specifies which files to compile as part of the project
 FLEX_OBJS = src/*.l
-C_OBJS = src/*.c
+C_OBJS = *.c
 
 #FLEX specifies flex
 FLEX = flex
@@ -16,6 +16,6 @@ COMPILER_FLAGS = -Wall
 OBJ_NAME = lex
 
 #This is the target that compiles our executable
-all : $(FLEX_OBJS) $(C_OBJS) 
-	$(FLEX) $(FLEX_OBJS)
-	$(CC) $(C_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+all:
+	$(FLEX) $(FLEX_OBJS); \
+	$(CC) $(C_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME) \
