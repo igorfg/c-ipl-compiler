@@ -66,9 +66,16 @@ STRING_CONST \"(\\.|[^"\\])*\"
 "/"                         { update_position(1); printf("<DIV_OP,%s>\n", yytext); }
 
   /* Logical operators */
-"!"                         { update_position(1); printf("<NOT_OP,%s>\n", yytext); }
+"!"                         { update_position(1); printf("<NOT_OR_LIST_TAIL_OP,%s>\n", yytext); }
 "||"                        { update_position(1); printf("<OR_OP,%s>\n", yytext); }
 "&&"                        { update_position(1); printf("<AND_OP,%s>\n", yytext); }
+
+  /* List type operators - List tail operator is the same as logic negation at the moment */
+"?"                         { update_position(1); printf("<LIST_HEAD_OP,%s>\n", yytext); }
+"%"                         { update_position(1); printf("<LIST_TAIL_OP,%s>\n", yytext); }
+":"                         { update_position(1); printf("<LIST_CONSTRUCTOR_OP,%s>\n", yytext); }
+">>"                        { update_position(1); printf("<LIST_MAP_OP,%s>\n", yytext); }
+"<<"                        { update_position(1); printf("<LIST_FILTER_OP,%s>\n", yytext); }
 
   /* Relational operators */
 "<"                         { update_position(1); printf("<LESSTHAN_OP,%s>\n", yytext); }
@@ -81,8 +88,8 @@ STRING_CONST \"(\\.|[^"\\])*\"
   /* Delimiters, assignments and block symbols */
 "{"                         { update_position(1); printf("<LBRACE,%s>\n", yytext); }
 "}"                         { update_position(1); printf("<RBRACE,%s>\n", yytext); }
-"("                         { update_position(1);printf("<LPARENTHESES,%s>\n", yytext); }
-")"                         { update_position(1); printf("<RPARENTHESES,%s>\n", yytext); }
+"("                         { update_position(1);printf("<LPARENTHESIS,%s>\n", yytext); }
+")"                         { update_position(1); printf("<RPARENTHESIS,%s>\n", yytext); }
 ";"                         { update_position(1); printf("<SEMICOLON,%s>\n", yytext); }
 "="                         { update_position(1); printf("<ASSIGNMENT,%s>\n", yytext); }
 ","                         { update_position(1); printf("<COMMA,%s>\n", yytext); }
