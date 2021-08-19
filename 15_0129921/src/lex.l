@@ -1,5 +1,6 @@
 /* Options to generate the output file without the need of extra declarations */
-%option noinput nounput
+%option noinput
+%option nounput
 %option noyywrap
 %{
 /* Declarations */
@@ -85,7 +86,7 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 "/"                         { update_position(1); printf("<DIV_OP,%s>\n", yytext); }
 
   /* Logical operators */
-"!"                         { update_position(1); printf("<NOT_OR_LIST_TAIL_OP,%s>\n", yytext); }
+"!"                         { update_position(1); printf("<NOT_OR_TAIL_OP,%s>\n", yytext); }
 "||"                        { update_position(1); printf("<OR_OP,%s>\n", yytext); }
 "&&"                        { update_position(1); printf("<AND_OP,%s>\n", yytext); }
 
@@ -102,13 +103,13 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 ">"                         { update_position(1); printf("<GREATERTHAN_OP,%s>\n", yytext); }
 ">="                        { update_position(1); printf("<GREATEREQUAl_OP,%s>\n", yytext); }
 "!="                        { update_position(1); printf("<NOTEQUAL_OP,%s>\n", yytext); }
-"=="                        { update_position(1); printf("<COMPARISON_OP,%s>\n", yytext); }
+"=="                        { update_position(1); printf("<EQUAL_OP,%s>\n", yytext); }
 
   /* Delimiters, assignments and block symbols */
 "{"                         { update_position(1); printf("<LBRACE,%s>\n", yytext); }
 "}"                         { update_position(1); printf("<RBRACE,%s>\n", yytext); }
-"("                         { update_position(1);printf("<LPARENTHESIS,%s>\n", yytext); }
-")"                         { update_position(1); printf("<RPARENTHESIS,%s>\n", yytext); }
+"("                         { update_position(1); printf("<LPARENTHESES,%s>\n", yytext); }
+")"                         { update_position(1); printf("<RPARENTHESES,%s>\n", yytext); }
 ";"                         { update_position(1); printf("<SEMICOLON,%s>\n", yytext); }
 "="                         { update_position(1); printf("<ASSIGNMENT,%s>\n", yytext); }
 ","                         { update_position(1); printf("<COMMA,%s>\n", yytext); }
@@ -157,5 +158,6 @@ static void update_position(int should_print_line_number) {
 
 int main() {
   yylex();
+  yylex_destroy();
   return 0;
 }

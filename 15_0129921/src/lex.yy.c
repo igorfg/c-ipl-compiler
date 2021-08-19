@@ -525,7 +525,7 @@ char *yytext;
 #line 1 "src/lex.l"
 /* Options to generate the output file without the need of extra declarations */
 #define YY_NO_INPUT 1
-#line 5 "src/lex.l"
+#line 6 "src/lex.l"
 /* Declarations */
 #include <string.h>
 #include <stdlib.h>
@@ -758,9 +758,9 @@ YY_DECL
 		}
 
 	{
-#line 34 "src/lex.l"
+#line 35 "src/lex.l"
 
-#line 36 "src/lex.l"
+#line 37 "src/lex.l"
   /*Ignore whitespaces*/
 #line 766 "lex.yy.c"
 
@@ -822,13 +822,13 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 37 "src/lex.l"
+#line 38 "src/lex.l"
 { update_position(0); }
 	YY_BREAK
 /* Multiline Comments */
 case 2:
 YY_RULE_SETUP
-#line 40 "src/lex.l"
+#line 41 "src/lex.l"
 { 
                               comment_block_line_begin = current_line;
                               update_position(0);
@@ -837,18 +837,18 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 45 "src/lex.l"
+#line 46 "src/lex.l"
 { update_position(0); BEGIN(INITIAL); }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 46 "src/lex.l"
+#line 47 "src/lex.l"
 { update_position(0); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 47 "src/lex.l"
+#line 48 "src/lex.l"
 { update_position(0); }
 	YY_BREAK
 /*
@@ -857,7 +857,7 @@ YY_RULE_SETUP
   https://stackoverflow.com/questions/29991073/checking-unfinished-comments-in-flex
    */
 case YY_STATE_EOF(COMMENT_BLOCK):
-#line 53 "src/lex.l"
+#line 54 "src/lex.l"
 { 
                               printf("/* never ending comment block at line %d\n", comment_block_line_begin);
                               yyterminate();
@@ -866,68 +866,68 @@ case YY_STATE_EOF(COMMENT_BLOCK):
 /* Single line comments */
 case 6:
 YY_RULE_SETUP
-#line 59 "src/lex.l"
+#line 60 "src/lex.l"
 { update_position(0); BEGIN(COMMENT_LINE); }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 60 "src/lex.l"
+#line 61 "src/lex.l"
 { update_position(0); BEGIN(INITIAL); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 61 "src/lex.l"
+#line 62 "src/lex.l"
 { update_position(0); }
 	YY_BREAK
 /* Data types are int, float elem and set */
 case 9:
 YY_RULE_SETUP
-#line 64 "src/lex.l"
+#line 65 "src/lex.l"
 { update_position(1); printf("<INT_TYPE,%s>\n", yytext); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 65 "src/lex.l"
+#line 66 "src/lex.l"
 { update_position(1); printf("<FLOAT_TYPE,%s>\n", yytext); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 66 "src/lex.l"
+#line 67 "src/lex.l"
 { update_position(1); printf("<INT_LIST_TYPE,%s>\n", yytext); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 67 "src/lex.l"
+#line 68 "src/lex.l"
 { update_position(1); printf("<FLOAT_LIST_TYPE,%s>\n", yytext); }
 	YY_BREAK
 /* Char os string constant with single or double quotes */
 /* Constants */
 case 13:
 YY_RULE_SETUP
-#line 72 "src/lex.l"
+#line 73 "src/lex.l"
 { update_position(1); printf("<INT_CONST,%s>\n", yytext); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 73 "src/lex.l"
+#line 74 "src/lex.l"
 { update_position(1); printf("<FLOAT_CONST,%s>\n", yytext); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 74 "src/lex.l"
+#line 75 "src/lex.l"
 { update_position(1); printf("<LIST_CONST,%s>\n", yytext); }
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 75 "src/lex.l"
+#line 76 "src/lex.l"
 { update_position(1); printf("<STRING_CONST,%s>\n", yytext); }
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 76 "src/lex.l"
+#line 77 "src/lex.l"
 { 
                               printf("Error: \" at line %d, column %d does not have a closing \"\n", current_line, current_col);
                               update_position(0);
@@ -936,174 +936,174 @@ YY_RULE_SETUP
 /* Definition of operators */
 case 18:
 YY_RULE_SETUP
-#line 83 "src/lex.l"
+#line 84 "src/lex.l"
 { update_position(1); printf("<ADD_OP,%s>\n", yytext); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 84 "src/lex.l"
+#line 85 "src/lex.l"
 { update_position(1); printf("<SUB_OP,%s>\n", yytext); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 85 "src/lex.l"
+#line 86 "src/lex.l"
 { update_position(1); printf("<MULT_OP,%s>\n", yytext); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 86 "src/lex.l"
+#line 87 "src/lex.l"
 { update_position(1); printf("<DIV_OP,%s>\n", yytext); }
 	YY_BREAK
 /* Logical operators */
 case 22:
 YY_RULE_SETUP
-#line 89 "src/lex.l"
-{ update_position(1); printf("<NOT_OR_LIST_TAIL_OP,%s>\n", yytext); }
+#line 90 "src/lex.l"
+{ update_position(1); printf("<NOT_OR_TAIL_OP,%s>\n", yytext); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 90 "src/lex.l"
+#line 91 "src/lex.l"
 { update_position(1); printf("<OR_OP,%s>\n", yytext); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 91 "src/lex.l"
+#line 92 "src/lex.l"
 { update_position(1); printf("<AND_OP,%s>\n", yytext); }
 	YY_BREAK
 /* List type operators - List tail operator is the same as logic negation at the moment */
 case 25:
 YY_RULE_SETUP
-#line 94 "src/lex.l"
+#line 95 "src/lex.l"
 { update_position(1); printf("<LIST_HEAD_OP,%s>\n", yytext); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 95 "src/lex.l"
+#line 96 "src/lex.l"
 { update_position(1); printf("<LIST_TAIL_OP,%s>\n", yytext); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 96 "src/lex.l"
+#line 97 "src/lex.l"
 { update_position(1); printf("<LIST_CONSTRUCTOR_OP,%s>\n", yytext); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 97 "src/lex.l"
+#line 98 "src/lex.l"
 { update_position(1); printf("<LIST_MAP_OP,%s>\n", yytext); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 98 "src/lex.l"
+#line 99 "src/lex.l"
 { update_position(1); printf("<LIST_FILTER_OP,%s>\n", yytext); }
 	YY_BREAK
 /* Relational operators */
 case 30:
 YY_RULE_SETUP
-#line 101 "src/lex.l"
+#line 102 "src/lex.l"
 { update_position(1); printf("<LESSTHAN_OP,%s>\n", yytext); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 102 "src/lex.l"
+#line 103 "src/lex.l"
 { update_position(1); printf("<LESSEQUAL_OP,%s>\n", yytext); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 103 "src/lex.l"
+#line 104 "src/lex.l"
 { update_position(1); printf("<GREATERTHAN_OP,%s>\n", yytext); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 104 "src/lex.l"
+#line 105 "src/lex.l"
 { update_position(1); printf("<GREATEREQUAl_OP,%s>\n", yytext); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 105 "src/lex.l"
+#line 106 "src/lex.l"
 { update_position(1); printf("<NOTEQUAL_OP,%s>\n", yytext); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 106 "src/lex.l"
-{ update_position(1); printf("<COMPARISON_OP,%s>\n", yytext); }
+#line 107 "src/lex.l"
+{ update_position(1); printf("<EQUAL_OP,%s>\n", yytext); }
 	YY_BREAK
 /* Delimiters, assignments and block symbols */
 case 36:
 YY_RULE_SETUP
-#line 109 "src/lex.l"
+#line 110 "src/lex.l"
 { update_position(1); printf("<LBRACE,%s>\n", yytext); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 110 "src/lex.l"
+#line 111 "src/lex.l"
 { update_position(1); printf("<RBRACE,%s>\n", yytext); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 111 "src/lex.l"
-{ update_position(1);printf("<LPARENTHESIS,%s>\n", yytext); }
+#line 112 "src/lex.l"
+{ update_position(1); printf("<LPARENTHESES,%s>\n", yytext); }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 112 "src/lex.l"
-{ update_position(1); printf("<RPARENTHESIS,%s>\n", yytext); }
+#line 113 "src/lex.l"
+{ update_position(1); printf("<RPARENTHESES,%s>\n", yytext); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 113 "src/lex.l"
+#line 114 "src/lex.l"
 { update_position(1); printf("<SEMICOLON,%s>\n", yytext); }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 114 "src/lex.l"
+#line 115 "src/lex.l"
 { update_position(1); printf("<ASSIGNMENT,%s>\n", yytext); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 115 "src/lex.l"
+#line 116 "src/lex.l"
 { update_position(1); printf("<COMMA,%s>\n", yytext); }
 	YY_BREAK
 /* Flow control */
 case 43:
 YY_RULE_SETUP
-#line 118 "src/lex.l"
+#line 119 "src/lex.l"
 { update_position(1); printf("<FOR_KW,%s>\n", yytext); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 119 "src/lex.l"
+#line 120 "src/lex.l"
 { update_position(1); printf("<IF_KW,%s>\n", yytext); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 120 "src/lex.l"
+#line 121 "src/lex.l"
 { update_position(1); printf("<ELSE_KW,%s>\n", yytext); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 121 "src/lex.l"
+#line 122 "src/lex.l"
 { update_position(1); printf("<RETURN_KW,%s>\n", yytext); }
 	YY_BREAK
 /* Input and Output */
 case 47:
 YY_RULE_SETUP
-#line 124 "src/lex.l"
+#line 125 "src/lex.l"
 { update_position(1); printf("<READ_KW,%s>\n", yytext); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 125 "src/lex.l"
+#line 126 "src/lex.l"
 { update_position(1); printf("<WRITE_KW,%s>\n", yytext); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 126 "src/lex.l"
+#line 127 "src/lex.l"
 { update_position(1); printf("<WRITELN_KW,%s>\n", yytext); }
 	YY_BREAK
 /* ID Definition */
 case 50:
 YY_RULE_SETUP
-#line 129 "src/lex.l"
+#line 130 "src/lex.l"
 {
                               update_position(1);
                               printf("<ID,%s>\n", yytext);
@@ -1112,7 +1112,7 @@ YY_RULE_SETUP
 /* Error handling */
 case 51:
 YY_RULE_SETUP
-#line 135 "src/lex.l"
+#line 136 "src/lex.l"
 {
                               update_position(0);
                               printf("Token not recognized: \"%s\". Line: %d, Column: %d\n", yytext, current_line, current_col);
@@ -1120,7 +1120,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 140 "src/lex.l"
+#line 141 "src/lex.l"
 ECHO;
 	YY_BREAK
 #line 1127 "lex.yy.c"
@@ -2092,7 +2092,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 140 "src/lex.l"
+#line 141 "src/lex.l"
 
 
 /* Updates line in case of newline and updates column otherwise */
@@ -2114,6 +2114,7 @@ static void update_position(int should_print_line_number) {
 
 int main() {
   yylex();
+  yylex_destroy();
   return 0;
 }
 
