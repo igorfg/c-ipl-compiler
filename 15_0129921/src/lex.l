@@ -3,13 +3,13 @@
 %option nounput
 %option noyywrap
 %{
-#define DEBUG_MODE
-
 /* Declarations */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "../lib/syn.tab.h"
+
+#define LEX_DEBUG_MODE
 
 int current_line = 1;
 int current_col = 1;
@@ -105,7 +105,7 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 "<"                         { update_position(1); print_token("LESSTHAN_OP\0", yytext); return LESSTHAN_OP; }
 "<="                        { update_position(1); print_token("LESSEQUAL_OP\0", yytext); return LESSEQUAL_OP; }
 ">"                         { update_position(1); print_token("GREATERTHAN_OP\0", yytext); return GREATERTHAN_OP; }
-">="                        { update_position(1); print_token("GREATEREQUAl_OP\0", yytext); return GREATEREQUAl_OP; }
+">="                        { update_position(1); print_token("GREATEREQUAl_OP\0", yytext); return GREATEREQUAL_OP; }
 "!="                        { update_position(1); print_token("NOTEQUAL_OP\0", yytext); return NOTEQUAL_OP; }
 "=="                        { update_position(1); print_token("EQUAL_OP\0", yytext); return EQUAL_OP; }
 
@@ -142,7 +142,7 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 
 /* Updates line in case of newline and updates column otherwise */
 static void update_position(int should_print_line_number) {
-#ifdef DEBUG_MODE
+#ifdef LEX_DEBUG_MODE
   if (should_print_line_number) {
     printf("Lex %d: ", current_line);
   }
@@ -160,7 +160,7 @@ static void update_position(int should_print_line_number) {
 }
 
 static void print_token(char* token_name, char* yytext) {
-#if defined DEBUG_MODE
+#if defined LEX_DEBUG_MODE
   printf("<%s,%s>\n", token_name, yytext);
 #endif
 }
