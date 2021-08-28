@@ -21,6 +21,6 @@ OBJ_NAME = tradutor
 
 #This is the target that compiles our executable
 all:
-	$(BISON) -o src/syn.tab.c $(BISON_OBJS); \
+	$(BISON) $(BISON_OBJS); \
 	$(FLEX) --outfile=src/lex.yy.c $(FLEX_OBJS); \
 	$(CC) $(C_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME) \
