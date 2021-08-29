@@ -1,4 +1,4 @@
-%defines "lib/syn.tab.h"
+%defines "syn.tab.h"
 %define parse.error verbose
 %define parse.trace
 %locations
@@ -57,6 +57,9 @@ static void print_grammar_rule(char*);
 %token WRITELN_KW
 %token ID
 
+// Solve ambiguity conflict
+%right RPARENTHESES ELSE_KW
+
 %%
 // 1
 program: declaration-list { print_grammar_rule("program\0"); };
@@ -102,7 +105,7 @@ expression-statement: expression SEMICOLON | SEMICOLON { print_grammar_rule("exp
 conditional-statement: IF_KW LPARENTHESES expression RPARENTHESES statement { print_grammar_rule("conditional-statement IF\0"); }
                      | IF_KW LPARENTHESES expression RPARENTHESES statement ELSE_KW statement { print_grammar_rule("conditional-statement IF ELSE\0"); };
 // 15
-iteration-statement: FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOLON expression LPARENTHESES statement { print_grammar_rule("iteration-statement\0"); };
+iteration-statement: FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOLON expression RPARENTHESES statement { print_grammar_rule("iteration-statement\0"); };
 // 16
 return-statement: RETURN_KW SEMICOLON { print_grammar_rule("return-statement void\0"); }
                 | RETURN_KW expression SEMICOLON { print_grammar_rule("return-statement expression\0"); };
@@ -133,7 +136,7 @@ relational-operator: LESSTHAN_OP { print_grammar_rule("relational-operator LESST
 binary-logical-operator: AND_OP { print_grammar_rule("binary-logical-operator AND\0"); }
                        | OR_OP { print_grammar_rule("binary-logical-operator OR\0"); };
 // 24
-list-expression: LIST_HEAD_OP math-expression { print_grammar_rule("list-expression list head\0"); }
+list-expression: list-constructor { print_grammar_rule("list-expression list constructor\0"); }
                | LIST_TAIL_OP math-expression { print_grammar_rule("list-expression list tail\0"); };
 // 25
 math-expression: math-expression add-sub-operator term { print_grammar_rule("math-expression add-sub\0"); }
@@ -150,18 +153,25 @@ mul-div-operator: MULT_OP { print_grammar_rule("mul-div-operator mult\0"); }
 // 29
 factor: LPARENTHESES expression RPARENTHESES { print_grammar_rule("factor expression\0"); }
       | func-call { print_grammar_rule("factor func-call\0"); }
+      | LIST_HEAD_OP ID { print_grammar_rule("factor list head\0"); }
       | ID { print_grammar_rule("factor id\0"); }
       | INT_CONST { print_grammar_rule("factor int const\0"); }
       | FLOAT_CONST { print_grammar_rule("factor float const\0"); }
-      | LIST_CONST { print_grammar_rule("factor list const\0"); };
+      | LIST_CONST { print_grammar_rule("factor list const\0"); }
+      | STRING_CONST { print_grammar_rule("factor string const\0"); };
 // 30
 func-call: ID LPARENTHESES args-list RPARENTHESES { print_grammar_rule("func-call\0"); };
 // 31
 args-list: args { print_grammar_rule("args-list args\0"); }
-         | %empty { print_grammar_rule("args-list empty\0"); }
+         | %empty { print_grammar_rule("args-list empty\0"); };
 // 32
 args: args COMMA expression { print_grammar_rule("args multiple args\0"); }
     | expression { print_grammar_rule("args expression\0"); };
+// 33
+list-constructor: list-constructor-expression LIST_CONSTRUCTOR_OP ID  { print_grammar_rule("list-constructor\0"); };
+// 34
+list-constructor-expression: list-constructor-expression LIST_CONSTRUCTOR_OP math-expression { print_grammar_rule("list-constructor-expression adding expression\0"); }
+                           | math-expression { print_grammar_rule("list-constructor-expression finished\0"); };
 %%
 int yyerror(const char * e) {
   printf("%s", e);
