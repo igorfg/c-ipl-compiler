@@ -4,12 +4,12 @@
 %option noyywrap
 %{
 /* Declarations */
+#define LEX_DEBUG_MODE
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../lib/syn.tab.h"
-
-#define LEX_DEBUG_MODE
+#include "syn.tab.h"
 
 int current_line = 1;
 int current_col = 1;

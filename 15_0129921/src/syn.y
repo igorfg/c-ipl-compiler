@@ -1,4 +1,5 @@
-%defines "syn.tab.h"
+%defines "lib/syn.tab.h"
+%define lr.type canonical-lr;
 %define parse.error verbose
 %define parse.trace
 %locations
@@ -11,6 +12,8 @@
 extern int yylex();
 extern FILE * yyin;
 extern int yydestroy();
+extern int current_line;
+extern int current_col;
 int yyerror(const char * e);
 static void print_grammar_rule(char*);
 %}
@@ -189,7 +192,7 @@ output-arg: simple-expression { print_grammar_rule("output-arg simple-expression
           | STRING_CONST { print_grammar_rule("output-arg string const"); };
 %%
 int yyerror(const char * e) {
-  printf("%s\n", e);
+  printf("%s at line %d col %d\n", e, current_line-1, current_col);
   return 0;
 }
 

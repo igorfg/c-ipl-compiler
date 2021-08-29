@@ -14,13 +14,13 @@ CC = gcc
 
 #COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings
-COMPILER_FLAGS = -Wall
+COMPILER_FLAGS = -Wall -Ilib/
 
 #OBJ_NAME specifies the name of our executable
 OBJ_NAME = tradutor
 
 #This is the target that compiles our executable
 all:
-	$(BISON) $(BISON_OBJS); \
+	$(BISON) -d -o src/syn.tab.c $(BISON_OBJS); \
 	$(FLEX) --outfile=src/lex.yy.c $(FLEX_OBJS); \
 	$(CC) $(C_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME) \
