@@ -90,7 +90,7 @@ block-statement: LBRACE statement-or-declaration-list RBRACE { print_grammar_rul
 // 11
 statement-or-declaration-list: statement-or-declaration-list statement { print_grammar_rule("statement-or-declaration-list statement\0"); }
                              | statement-or-declaration-list var-declaration { print_grammar_rule("statement-or-declaration-list var-declaration\0"); }
-                             | %empty { print_grammar_rule("empty\0"); };
+                             | %empty { print_grammar_rule("statement-or-declaration-list empty\0"); };
 // 12
 statement: expression-statement { print_grammar_rule("statement expression-statement\0"); }
          | block-statement { print_grammar_rule("statement block-statement\0"); }
@@ -110,9 +110,9 @@ iteration-statement: FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOL
 return-statement: RETURN_KW SEMICOLON { print_grammar_rule("return-statement void\0"); }
                 | RETURN_KW expression SEMICOLON { print_grammar_rule("return-statement expression\0"); };
 // 17
-input-statement: READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON { print_grammar_rule("input-statement\0"); }
+input-statement: READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON { print_grammar_rule("input-statement\0"); };
 // 18
-output-statement: write-call LPARENTHESES simple-expression RPARENTHESES SEMICOLON { print_grammar_rule("output-statement\0"); };
+output-statement: write-call LPARENTHESES output-arg RPARENTHESES SEMICOLON { print_grammar_rule("output-statement simple-expression\0"); };
 // 19
 write-call: WRITE_KW { print_grammar_rule("write-call write\0"); }
           | WRITELN_KW { print_grammar_rule("write-call writeln\0"); };
@@ -137,6 +137,7 @@ binary-logical-operator: AND_OP { print_grammar_rule("binary-logical-operator AN
                        | OR_OP { print_grammar_rule("binary-logical-operator OR\0"); };
 // 24
 list-expression: list-constructor { print_grammar_rule("list-expression list constructor\0"); }
+               | list-func { print_grammar_rule("list-expression list func"); }
                | LIST_TAIL_OP math-expression { print_grammar_rule("list-expression list tail\0"); };
 // 25
 math-expression: math-expression add-sub-operator term { print_grammar_rule("math-expression add-sub\0"); }
@@ -153,12 +154,10 @@ mul-div-operator: MULT_OP { print_grammar_rule("mul-div-operator mult\0"); }
 // 29
 factor: LPARENTHESES expression RPARENTHESES { print_grammar_rule("factor expression\0"); }
       | func-call { print_grammar_rule("factor func-call\0"); }
+      | numeric-const { print_grammar_rule("factor numeric-const\0"); }
       | LIST_HEAD_OP ID { print_grammar_rule("factor list head\0"); }
       | ID { print_grammar_rule("factor id\0"); }
-      | INT_CONST { print_grammar_rule("factor int const\0"); }
-      | FLOAT_CONST { print_grammar_rule("factor float const\0"); }
-      | LIST_CONST { print_grammar_rule("factor list const\0"); }
-      | STRING_CONST { print_grammar_rule("factor string const\0"); };
+      | LIST_CONST { print_grammar_rule("factor list const\0"); };
 // 30
 func-call: ID LPARENTHESES args-list RPARENTHESES { print_grammar_rule("func-call\0"); };
 // 31
@@ -172,15 +171,31 @@ list-constructor: list-constructor-expression LIST_CONSTRUCTOR_OP ID  { print_gr
 // 34
 list-constructor-expression: list-constructor-expression LIST_CONSTRUCTOR_OP math-expression { print_grammar_rule("list-constructor-expression adding expression\0"); }
                            | math-expression { print_grammar_rule("list-constructor-expression finished\0"); };
+// 35
+list-func: list-func-expression list-func-operator ID { print_grammar_rule("list-func\0"); };
+// 36
+list-func-expression: list-func-expression list-func-operator ID { print_grammar_rule("list-func-expression multiple"); }
+                        | ID { print_grammar_rule("list-func-expression single id"); };
+// 37
+list-func-operator: LIST_MAP_OP { print_grammar_rule("list-func-operator map"); }
+                      | LIST_FILTER_OP { print_grammar_rule("list-func-operator filter"); };
+// 38
+numeric-const: add-sub-operator FLOAT_CONST { print_grammar_rule("numeric-const signed float const\0"); }
+             | add-sub-operator INT_CONST { print_grammar_rule("numeric-const signed int const\0"); }
+             | FLOAT_CONST { print_grammar_rule("numeric-const unsgigned float const\0"); }
+             | INT_CONST { print_grammar_rule("numeric-const unsigned int const\0"); };
+// 39
+output-arg: simple-expression { print_grammar_rule("output-arg simple-expression"); }
+          | STRING_CONST { print_grammar_rule("output-arg string const"); };
 %%
 int yyerror(const char * e) {
-  printf("%s", e);
+  printf("%s\n", e);
   return 0;
 }
 
 static void print_grammar_rule(char* grammar_rule) {
 #if defined SYN_DEBUG_MODE
-  printf("%s\n", grammar_rule);
+  printf("Syn %s\n", grammar_rule);
 #endif
 }
 
