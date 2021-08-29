@@ -30,8 +30,8 @@ WHITESPACE   {DELIM}+
 DIGIT        [0-9]
 LETTER       [a-zA-Z]
 ID           ({LETTER}|"_")+({LETTER}|{DIGIT}|"_")*
-INT_CONST    [+-]?{DIGIT}+
-FLOAT_CONST  [+-]?{DIGIT}*(\.{DIGIT}+)
+INT_CONST    {DIGIT}+
+FLOAT_CONST  {DIGIT}*(\.{DIGIT}+)
 LIST_CONST   NIL
 STRING_CONST ["]([^"\\\n]|\\(.|\n))*["]
 UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
