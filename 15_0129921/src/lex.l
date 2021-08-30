@@ -10,14 +10,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "syn.tab.h"
+#include "symbol_table.h"
+
+
+static void update_position(int);
+static void print_token(char*, char*);
 
 int current_line = 1;
 int current_col = 1;
 int previous_col;
 int comment_block_line_begin;
-
-static void update_position(int);
-static void print_token(char*, char*);
 %}
 
 /* Directives for comment block or comment lines */
@@ -130,7 +132,11 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 "writeln"                   { update_position(1); print_token("WRITELN_KW\0", yytext); return WRITELN_KW; }
   
   /* ID Definition */
-{ID}                        { update_position(1); print_token("ID\0", yytext); return ID; }
+{ID}                        { 
+                              update_position(1);
+                              print_token("ID\0", yytext);
+                              return ID;
+                            }
 
   /* Error handling */
 .                           {

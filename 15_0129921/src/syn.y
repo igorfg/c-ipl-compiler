@@ -6,6 +6,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include "symbol_table.h"
 
 #define SYN_DEBUG_MODE
 
@@ -18,6 +19,7 @@ int yyerror(const char * e);
 static void print_grammar_rule(char*);
 %}
 
+/* Token declarations */
 %token INT_TYPE
 %token FLOAT_TYPE
 %token INT_LIST_TYPE
@@ -203,6 +205,9 @@ static void print_grammar_rule(char* grammar_rule) {
 }
 
 int main() {
+  symbol_table = initialize_symbol_table("global");
+  // At first our current symbol table is the root symbol table
+  current_symbol_table = symbol_table;
   yyparse();
   return 0;
 }
