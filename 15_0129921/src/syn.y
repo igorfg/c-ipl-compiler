@@ -8,59 +8,121 @@
 #include <string.h>
 #include "symbol_table.h"
 
-#define SYN_DEBUG_MODE
+// #define SYN_DEBUG_MODE
+
+typedef struct node node_t;
+
+// Syntax abstract tree
+struct node {
+  node_t* first_node; 
+  node_t* second_node;
+  node_t* third_node; 
+  node_t* fourth_node;
+  char* name;             
+  char* first_symbol;          
+  char* second_symbol;
+  char* third_symbol;          
+};
 
 extern int yylex();
-extern FILE * yyin;
+extern FILE* yyin;
 extern int yydestroy();
 extern int current_line;
 extern int current_col;
-int yyerror(const char * e);
+
+int yyerror(const char* e);
 static void print_grammar_rule(char*);
+node_t* add_node(node_t*, node_t*, node_t*, node_t*, char*, char*, char*, char*);
 %}
 
+%union {
+  char* terminal_string;
+  struct node* node;
+}
+
+%type<node> program
+%type<node> declaration-list
+%type<node> declaration
+%type<node> var-declaration
+%type<node> data-type
+%type<node> func-declaration
+%type<node> params-list
+%type<node> params
+%type<node> param
+%type<node> block-statement
+%type<node> statement-or-declaration-list
+%type<node> statement
+%type<node> expression-statement
+%type<node> conditional-statement
+%type<node> iteration-statement
+%type<node> return-statement
+%type<node> input-statement
+%type<node> output-statement
+%type<node> write-call
+%type<node> expression
+%type<node> simple-expression
+%type<node> relational-operator
+%type<node> binary-logical-operator
+%type<node> list-expression
+%type<node> math-expression
+%type<node> add-sub-operator
+%type<node> term
+%type<node> mul-div-operator
+%type<node> factor
+%type<node> func-call
+%type<node> args-list
+%type<node> args
+%type<node> list-constructor
+%type<node> list-constructor-expression
+%type<node> list-func
+%type<node> list-func-expression
+%type<node> list-func-operator
+%type<node> numeric-const
+%type<node> output-arg
+
+
 /* Token declarations */
-%token INT_TYPE
-%token FLOAT_TYPE
-%token INT_LIST_TYPE
-%token FLOAT_LIST_TYPE
-%token INT_CONST
-%token FLOAT_CONST
-%token LIST_CONST
-%token STRING_CONST
-%token ADD_OP
-%token SUB_OP
-%token MULT_OP
-%token DIV_OP
-%token NOT_OR_TAIL_OP
-%token OR_OP
-%token AND_OP
-%token LIST_HEAD_OP
-%token LIST_TAIL_OP
-%token LIST_CONSTRUCTOR_OP
-%token LIST_MAP_OP
-%token LIST_FILTER_OP
-%token LESSTHAN_OP
-%token LESSEQUAL_OP
-%token GREATERTHAN_OP
-%token GREATEREQUAL_OP
-%token NOTEQUAL_OP
-%token EQUAL_OP
-%token LBRACE
-%token RBRACE
-%token LPARENTHESES
-%token RPARENTHESES
-%token SEMICOLON
-%token ASSIGNMENT
-%token COMMA
-%token FOR_KW
-%token IF_KW
-%token ELSE_KW
-%token RETURN_KW
-%token READ_KW
-%token WRITE_KW
-%token WRITELN_KW
-%token ID
+%token<terminal_string> INT_TYPE
+%token<terminal_string> FLOAT_TYPE
+%token<terminal_string> INT_LIST_TYPE
+%token<terminal_string> FLOAT_LIST_TYPE
+%token<terminal_string> INT_CONST
+%token<terminal_string> FLOAT_CONST
+%token<terminal_string> LIST_CONST
+%token<terminal_string> STRING_CONST
+%token<terminal_string> ADD_OP
+%token<terminal_string> SUB_OP
+%token<terminal_string> MULT_OP
+%token<terminal_string> DIV_OP
+%token<terminal_string> NOT_OR_TAIL_OP
+%token<terminal_string> OR_OP
+%token<terminal_string> AND_OP
+%token<terminal_string> LIST_HEAD_OP
+%token<terminal_string> LIST_TAIL_OP
+%token<terminal_string> LIST_CONSTRUCTOR_OP
+%token<terminal_string> LIST_MAP_OP
+%token<terminal_string> LIST_FILTER_OP
+%token<terminal_string> LESSTHAN_OP
+%token<terminal_string> LESSEQUAL_OP
+%token<terminal_string> GREATERTHAN_OP
+%token<terminal_string> GREATEREQUAL_OP
+%token<terminal_string> NOTEQUAL_OP
+%token<terminal_string> EQUAL_OP
+%token<terminal_string> LBRACE
+%token<terminal_string> RBRACE
+%token<terminal_string> LPARENTHESES
+%token<terminal_string> RPARENTHESES
+%token<terminal_string> SEMICOLON
+%token<terminal_string> ASSIGNMENT
+%token<terminal_string> COMMA
+%token<terminal_string> FOR_KW
+%token<terminal_string> IF_KW
+%token<terminal_string> ELSE_KW
+%token<terminal_string> RETURN_KW
+%token<terminal_string> READ_KW
+%token<terminal_string> WRITE_KW
+%token<terminal_string> WRITELN_KW
+%token<terminal_string> ID
 
 // Solve ambiguity conflict
 %right RPARENTHESES ELSE_KW
@@ -74,14 +136,43 @@ declaration-list: declaration-list declaration | declaration { print_grammar_rul
 declaration: var-declaration { print_grammar_rule("declaration var-declaration\0"); }
            | func-declaration { print_grammar_rule("declaration func-declaration\0"); };
 // 4
-var-declaration: data-type ID SEMICOLON { print_grammar_rule("var-declaration\0"); };
+var-declaration: data-type ID SEMICOLON {
+                                          print_grammar_rule("var-declaration\0");
+                                          $$ = add_node($1, NULL, NULL, NULL, "var-declaration", $2, NULL, NULL);
+                                          // printf("%s %s\n", $2, $1->first_symbol);
+                                          char* id = $2;
+                                          char* data_type = $1->first_symbol;
+                                          add_symbol_table_entry(current_symbol_table, id, data_type);
+                                        };
 // 5
-data-type: INT_TYPE { print_grammar_rule("data-type INT_TYPE\0"); }
-         | FLOAT_TYPE { print_grammar_rule("data-type FLOAT_TYPE\0"); }
-         | INT_LIST_TYPE { print_grammar_rule("data-type INT_LIST_TYPE\0"); }
-         | FLOAT_LIST_TYPE { print_grammar_rule("data-type FLOAT_LIST_TYPE\0"); };
+data-type:
+  INT_TYPE          {
+                      print_grammar_rule("data-type INT_TYPE\0");
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                    }
+  | FLOAT_TYPE      {
+                      print_grammar_rule("data-type FLOAT_TYPE\0");
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                    }
+  | INT_LIST_TYPE   {
+                      print_grammar_rule("data-type INT_LIST_TYPE\0");
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                    }
+  | FLOAT_LIST_TYPE {
+                      print_grammar_rule("data-type FLOAT_LIST_TYPE\0");
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                    }
+;
 // 6
-func-declaration: data-type ID LPARENTHESES params-list RPARENTHESES block-statement { print_grammar_rule("func-declaration\0"); };
+func-declaration:
+  data-type ID LPARENTHESES params-list RPARENTHESES block-statement {
+    print_grammar_rule("func-declaration\0");
+    $$ = add_node($1, NULL, NULL, NULL, "func-declaration", $2, NULL, NULL);
+    char* id = $2;
+    char* data_type = "function";
+    add_symbol_table_entry(current_symbol_table, id, data_type);
+  }
+;
 // 7
 params-list: params { print_grammar_rule("params-list params\0"); }
            | %empty { print_grammar_rule("params-list empty\0"); };
@@ -204,10 +295,28 @@ static void print_grammar_rule(char* grammar_rule) {
 #endif
 }
 
+node_t* add_node(
+  node_t* first_node, node_t* second_node, node_t* third_node,
+  node_t* fourth_node, char* name, char* first_symbol, char* second_symbol, char* third_symbol
+) {
+  node_t* node = (node_t*)malloc(sizeof(node_t));
+  node->first_node = first_node;
+  node->second_node = second_node;
+  node->third_node = third_node;
+  node->fourth_node = fourth_node;
+  node->name = name;
+  node->first_symbol = first_symbol;
+  node->second_symbol = second_symbol;
+  node->third_symbol = third_symbol;
+
+  return node;
+}
+
 int main() {
   symbol_table = initialize_symbol_table("global");
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;
   yyparse();
+  print_symbol_table(symbol_table, 0);
   return 0;
 }
