@@ -308,11 +308,14 @@ node_t* add_node(
   node->first_symbol = first_symbol;
   node->second_symbol = second_symbol;
   node->third_symbol = third_symbol;
-
   return node;
 }
 
 int main() {
+  // Initialize scope stack
+  // scope_stack_element_t* scope_stack = NULL;
+  // scope_stack = add_element_to_stack(scope_stack, "global");
+  // The root symbol table is the only one without a parent
   symbol_table = initialize_symbol_table("global");
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;

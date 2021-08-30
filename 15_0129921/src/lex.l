@@ -19,9 +19,6 @@ int current_line = 1;
 int current_col = 1;
 int previous_col;
 int comment_block_line_begin;
-
-// Initialize scope stack
-scope_stack_t* scope_stack = NULL;
 %}
 
 /* Directives for comment block or comment lines */
@@ -114,8 +111,23 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 "=="                        { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("EQUAL_OP\0", yytext); return EQUAL_OP; }
 
   /* Delimiters, assignments and block symbols */
-"{"                         { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("LBRACE\0", yytext); return LBRACE; }
-"}"                         { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("RBRACE\0", yytext); return RBRACE; }
+"{"                         {
+                              update_position(1);
+                              yylval.terminal_string = (char*) strdup(yytext);
+                              print_token("LBRACE\0", yytext);
+                              symbol_table_t* inner_symbol_table = NULL;
+                              inner_symbol_table = initialize_symbol_table("inner_symbol_table");
+                              add_symbol_table_to_inner_scope(current_symbol_table, inner_symbol_table);
+                              current_symbol_table = inner_symbol_table;
+                              return LBRACE;
+                            }
+"}"                         {
+                              update_position(1);
+                              yylval.terminal_string = (char*) strdup(yytext);
+                              print_token("RBRACE\0", yytext);
+                              current_symbol_table = current_symbol_table->parent;
+                              return RBRACE;
+                            }
 "("                         { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("LPARENTHESES\0", yytext); return LPARENTHESES; }
 ")"                         { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("RPARENTHESES\0", yytext); return RPARENTHESES; }
 ";"                         { update_position(1); yylval.terminal_string = (char*) strdup(yytext); print_token("SEMICOLON\0", yytext); return SEMICOLON; }
