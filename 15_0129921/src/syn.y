@@ -321,5 +321,6 @@ int main() {
   current_symbol_table = symbol_table;
   yyparse();
   print_symbol_table(symbol_table, 0);
+  free_symbol_table(symbol_table);
   return 0;
 }

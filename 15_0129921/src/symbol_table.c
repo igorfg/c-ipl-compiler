@@ -20,7 +20,7 @@ void add_symbol_table_entry(symbol_table_t* symbol_table, char* id, char* data_t
 
 void add_symbol_table_to_inner_scope(symbol_table_t* parent, symbol_table_t* child) {
   child->parent = parent;
-  inner_scope_t* inner_scope = (inner_scope_t*)malloc(sizeof(inner_scope));
+  inner_scope_t* inner_scope = (inner_scope_t*)malloc(sizeof(inner_scope_t));
   inner_scope->symbol_table = child;
   DL_APPEND(parent->inner_scopes, inner_scope);
 }
@@ -34,8 +34,8 @@ void print_symbol_table(symbol_table_t* symbol_table, int indentation) {
   printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
 
   if (symbol_table->entries == NULL) {
-      printf("%*s|                                       EMPTY                                      |\n", indentation, "");
-      printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
+    printf("%*s|                                       EMPTY                                      |\n", indentation, "");
+    printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
   } else {
     // Iterates through every symbol table entry
     symbol_table_entry_t * entry;
@@ -56,4 +56,29 @@ scope_stack_element_t* add_element_to_stack(scope_stack_element_t* head, char* s
   new_scope_stack_element->scope_id = strdup(scope_id);
   STACK_PUSH(head, new_scope_stack_element);
   return head;
+}
+
+void free_symbol_table(symbol_table_t* symbol_table) {
+  if (symbol_table == NULL) {
+    return;
+  }
+
+  inner_scope_t* inner_scope;
+  inner_scope_t* tmp_inner_scope;
+  DL_FOREACH_SAFE(symbol_table->inner_scopes, inner_scope, tmp_inner_scope) {
+    free_symbol_table(inner_scope->symbol_table);
+    DL_DELETE(symbol_table->inner_scopes, inner_scope);
+    free(inner_scope);
+  }
+
+  // Frees every symbol table entry
+  symbol_table_entry_t * entry;
+  symbol_table_entry_t * tmp_entry;
+  DL_FOREACH_SAFE(symbol_table->entries, entry, tmp_entry) {
+    DL_DELETE(symbol_table->entries, entry);
+    free(entry);
+  }
+
+  free(symbol_table->scope_id);
+  free(symbol_table);
 }

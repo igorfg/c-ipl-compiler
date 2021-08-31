@@ -47,6 +47,7 @@ void add_symbol_table_entry(symbol_table_t*, char*, char*);
 void add_symbol_table_to_inner_scope(symbol_table_t*, symbol_table_t*);
 void print_symbol_table(symbol_table_t*, int);
 scope_stack_element_t* add_element_to_stack(scope_stack_element_t*, char*);
+void free_symbol_table(symbol_table_t*);
 
 // Initialize symbol table
 symbol_table_t *symbol_table;
