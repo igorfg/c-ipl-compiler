@@ -25,6 +25,7 @@ struct node {
 };
 
 extern int yylex();
+extern int yylex_destroy();
 extern FILE* yyin;
 extern int yydestroy();
 extern int current_line;
@@ -143,24 +144,25 @@ var-declaration: data-type ID SEMICOLON {
                                           char* id = $2;
                                           char* data_type = $1->first_symbol;
                                           add_symbol_table_entry(current_symbol_table, id, data_type);
+                                          free($2);
                                         };
 // 5
 data-type:
   INT_TYPE          {
                       print_grammar_rule("data-type INT_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "int", NULL, NULL);
                     }
   | FLOAT_TYPE      {
                       print_grammar_rule("data-type FLOAT_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "float", NULL, NULL);
                     }
   | INT_LIST_TYPE   {
                       print_grammar_rule("data-type INT_LIST_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "int list", NULL, NULL);
                     }
   | FLOAT_LIST_TYPE {
                       print_grammar_rule("data-type FLOAT_LIST_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", $1, NULL, NULL);
+                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "float list", NULL, NULL);
                     }
 ;
 // 6
@@ -171,6 +173,7 @@ func-declaration:
     char* id = $2;
     char* data_type = "function";
     add_symbol_table_entry(current_symbol_table, id, data_type);
+    free($2);
   }
 ;
 // 7
@@ -180,7 +183,10 @@ params-list: params { print_grammar_rule("params-list params\0"); }
 params: params COMMA param { print_grammar_rule("params multiple params\0"); }
       | param { print_grammar_rule("params single param\0"); }
 // 9
-param: data-type ID { print_grammar_rule("param\0"); };
+param: data-type ID {
+                      print_grammar_rule("param\0");
+                      free($2);
+                    };
 // 10
 block-statement: LBRACE statement-or-declaration-list RBRACE { print_grammar_rule("block-statement\0"); };
 // 11
@@ -206,14 +212,14 @@ iteration-statement: FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOL
 return-statement: RETURN_KW SEMICOLON { print_grammar_rule("return-statement void\0"); }
                 | RETURN_KW expression SEMICOLON { print_grammar_rule("return-statement expression\0"); };
 // 17
-input-statement: READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON { print_grammar_rule("input-statement\0"); };
+input-statement: READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON { print_grammar_rule("input-statement\0"); free($3); };
 // 18
 output-statement: write-call LPARENTHESES output-arg RPARENTHESES SEMICOLON { print_grammar_rule("output-statement simple-expression\0"); };
 // 19
 write-call: WRITE_KW { print_grammar_rule("write-call write\0"); }
           | WRITELN_KW { print_grammar_rule("write-call writeln\0"); };
 // 20
-expression: ID ASSIGNMENT expression { print_grammar_rule("expression assigment\0"); }
+expression: ID ASSIGNMENT expression { print_grammar_rule("expression assigment\0"); free($1); }
           | simple-expression { print_grammar_rule("expression simple-expression\0"); };
 // 21
 simple-expression: math-expression relational-operator math-expression { print_grammar_rule("simple-expression relational-operator\0"); }
@@ -251,11 +257,11 @@ mul-div-operator: MULT_OP { print_grammar_rule("mul-div-operator mult\0"); }
 factor: LPARENTHESES expression RPARENTHESES { print_grammar_rule("factor expression\0"); }
       | func-call { print_grammar_rule("factor func-call\0"); }
       | numeric-const { print_grammar_rule("factor numeric-const\0"); }
-      | LIST_HEAD_OP ID { print_grammar_rule("factor list head\0"); }
-      | ID { print_grammar_rule("factor id\0"); }
+      | LIST_HEAD_OP ID { print_grammar_rule("factor list head\0"); free($2); }
+      | ID { print_grammar_rule("factor id\0"); free($1); }
       | LIST_CONST { print_grammar_rule("factor list const\0"); };
 // 30
-func-call: ID LPARENTHESES args-list RPARENTHESES { print_grammar_rule("func-call\0"); };
+func-call: ID LPARENTHESES args-list RPARENTHESES { print_grammar_rule("func-call\0"); free($1); };
 // 31
 args-list: args { print_grammar_rule("args-list args\0"); }
          | %empty { print_grammar_rule("args-list empty\0"); };
@@ -263,15 +269,15 @@ args-list: args { print_grammar_rule("args-list args\0"); }
 args: args COMMA expression { print_grammar_rule("args multiple args\0"); }
     | expression { print_grammar_rule("args expression\0"); };
 // 33
-list-constructor: list-constructor-expression LIST_CONSTRUCTOR_OP ID  { print_grammar_rule("list-constructor\0"); };
+list-constructor: list-constructor-expression LIST_CONSTRUCTOR_OP ID  { print_grammar_rule("list-constructor\0"); free($3); };
 // 34
 list-constructor-expression: list-constructor-expression LIST_CONSTRUCTOR_OP math-expression { print_grammar_rule("list-constructor-expression adding expression\0"); }
                            | math-expression { print_grammar_rule("list-constructor-expression finished\0"); };
 // 35
-list-func: list-func-expression list-func-operator ID { print_grammar_rule("list-func\0"); };
+list-func: list-func-expression list-func-operator ID { print_grammar_rule("list-func\0"); free($3); };
 // 36
-list-func-expression: list-func-expression list-func-operator ID { print_grammar_rule("list-func-expression multiple"); }
-                        | ID { print_grammar_rule("list-func-expression single id"); };
+list-func-expression: list-func-expression list-func-operator ID { print_grammar_rule("list-func-expression multiple"); free($3); }
+                        | ID { print_grammar_rule("list-func-expression single id"); free($1); };
 // 37
 list-func-operator: LIST_MAP_OP { print_grammar_rule("list-func-operator map"); }
                       | LIST_FILTER_OP { print_grammar_rule("list-func-operator filter"); };
@@ -322,5 +328,6 @@ int main() {
   yyparse();
   print_symbol_table(symbol_table, 0);
   free_symbol_table(symbol_table);
+  yylex_destroy();
   return 0;
 }
