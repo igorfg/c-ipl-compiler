@@ -119,6 +119,8 @@ static void print_grammar_rule(char*);
 program:
   declaration-list {
     print_grammar_rule("program\0");
+    node_t* declaration_list = $1;
+    syntax_tree = declaration_list;
   }
 ;
 
@@ -126,9 +128,16 @@ program:
 declaration-list:
   declaration-list declaration {
     print_grammar_rule("declaration-list multiple\0");
+    $$ = initialize_node("declaration-list");
+    node_t* declaration_list = $$;
+    node_t* recursive_declaration_list = $1;
+    node_t* declaration = $2;
+    add_node(declaration_list, recursive_declaration_list);
+    add_node(declaration_list, declaration);
   }
   | declaration {
     print_grammar_rule("declaration-list single\0");
+    $$ = $1;
   }
 ;
 
@@ -136,8 +145,10 @@ declaration-list:
 declaration:
   var-declaration {
     print_grammar_rule("declaration var-declaration\0");
+    $$ = $1;
   }
   | func-declaration {
+    $$ = $1;
     print_grammar_rule("declaration func-declaration\0");
   }
 ;
@@ -590,7 +601,10 @@ int main() {
   current_symbol_table = symbol_table;
   yyparse();
   print_symbol_table(symbol_table, 0);
+  printf("Syntax Tree\n");
+  print_syntax_tree(syntax_tree, 0);
   free_symbol_table(symbol_table);
+  free_syntax_tree(syntax_tree);
   yylex_destroy();
   return 0;
 }

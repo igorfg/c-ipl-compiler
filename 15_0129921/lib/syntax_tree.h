@@ -18,7 +18,8 @@ struct node {
 
 void add_node(node_t*, node_t*);
 node_t* initialize_node(char*);
-
+void print_syntax_tree(node_t*, int);
+void free_syntax_tree(node_t*);
 
 node_t* syntax_tree;
 
