@@ -7,22 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "symbol_table.h"
+#include "syntax_tree.h"
 
 // #define SYN_DEBUG_MODE
-
-typedef struct node node_t;
-
-// Syntax abstract tree
-struct node {
-  node_t* first_node; 
-  node_t* second_node;
-  node_t* third_node; 
-  node_t* fourth_node;
-  char* name;             
-  char* first_symbol;          
-  char* second_symbol;
-  char* third_symbol;          
-};
 
 extern int yylex();
 extern int yylex_destroy();
@@ -31,9 +18,8 @@ extern int yydestroy();
 extern int current_line;
 extern int current_col;
 
-int yyerror(const char* e);
+int yyerror(const char*);
 static void print_grammar_rule(char*);
-node_t* add_node(node_t*, node_t*, node_t*, node_t*, char*, char*, char*, char*);
 %}
 
 %union {
@@ -130,7 +116,9 @@ node_t* add_node(node_t*, node_t*, node_t*, node_t*, char*, char*, char*, char*)
 
 %%
 // 1
-program: declaration-list { print_grammar_rule("program\0"); };
+program: declaration-list {
+                            print_grammar_rule("program\0");
+                          };
 // 2
 declaration-list: declaration-list declaration | declaration { print_grammar_rule("declaration-list\0"); };
 // 3
@@ -139,40 +127,45 @@ declaration: var-declaration { print_grammar_rule("declaration var-declaration\0
 // 4
 var-declaration: data-type ID SEMICOLON {
                                           print_grammar_rule("var-declaration\0");
-                                          $$ = add_node($1, NULL, NULL, NULL, "var-declaration", $2, NULL, NULL);
-                                          // printf("%s %s\n", $2, $1->first_symbol);
-                                          char* id = $2;
-                                          char* data_type = $1->first_symbol;
-                                          add_symbol_table_entry(current_symbol_table, id, data_type);
+                                          $$ = initialize_node("var-declaration");
+                                          node_t* var_declaration = $$;
+                                          node_t* data_type = $1;
+                                          node_t* id = initialize_node($2);
+                                          add_node(var_declaration, data_type);
+                                          add_node(var_declaration, id);
+                                          add_symbol_table_entry(current_symbol_table, id->name, data_type->name);
                                           free($2);
                                         };
 // 5
 data-type:
   INT_TYPE          {
                       print_grammar_rule("data-type INT_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "int", NULL, NULL);
+                      $$ = initialize_node("int");
                     }
   | FLOAT_TYPE      {
                       print_grammar_rule("data-type FLOAT_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "float", NULL, NULL);
+                      $$ = initialize_node("float");
                     }
   | INT_LIST_TYPE   {
                       print_grammar_rule("data-type INT_LIST_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "int list", NULL, NULL);
+                      $$ = initialize_node("int list");
                     }
   | FLOAT_LIST_TYPE {
                       print_grammar_rule("data-type FLOAT_LIST_TYPE\0");
-                      $$ = add_node(NULL, NULL, NULL, NULL, "data-type", "float list", NULL, NULL);
+                      $$ = initialize_node("float list");
                     }
 ;
 // 6
 func-declaration:
   data-type ID LPARENTHESES params-list RPARENTHESES block-statement {
     print_grammar_rule("func-declaration\0");
-    $$ = add_node($1, NULL, NULL, NULL, "func-declaration", $2, NULL, NULL);
-    char* id = $2;
-    char* data_type = "function";
-    add_symbol_table_entry(current_symbol_table, id, data_type);
+    $$ = initialize_node("func-declaration");
+    node_t* func_declaration = $$;
+    node_t* data_type = $1;
+    node_t* id = initialize_node($2);
+    add_node(func_declaration, data_type);
+    add_node(func_declaration, id);
+    add_symbol_table_entry(current_symbol_table, id->name, "function");
     free($2);
   }
 ;
@@ -299,22 +292,6 @@ static void print_grammar_rule(char* grammar_rule) {
 #if defined SYN_DEBUG_MODE
   printf("Syn %s\n", grammar_rule);
 #endif
-}
-
-node_t* add_node(
-  node_t* first_node, node_t* second_node, node_t* third_node,
-  node_t* fourth_node, char* name, char* first_symbol, char* second_symbol, char* third_symbol
-) {
-  node_t* node = (node_t*)malloc(sizeof(node_t));
-  node->first_node = first_node;
-  node->second_node = second_node;
-  node->third_node = third_node;
-  node->fourth_node = fourth_node;
-  node->name = name;
-  node->first_symbol = first_symbol;
-  node->second_symbol = second_symbol;
-  node->third_symbol = third_symbol;
-  return node;
 }
 
 int main() {
