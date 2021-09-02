@@ -5,8 +5,9 @@ $ make
 ```
 In case you can't use make you can use the following commands from the main directory:
 ```
-  $ flex src/lex.l
-  $ gcc *.c -Wall -o tradutor
+  $ bison -d -o src/syn.tab.c src/*.y; \
+    flex --outfile=src/lex.yy.c src/*.l; \
+    gcc src/*.c -Wall -Ilib/  -o tradutor \
 ```
 In order to execute any of the example files run:
 ```
