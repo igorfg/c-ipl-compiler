@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "utlist.h"
-#include "utstack.h"
 
 typedef struct symbol_table_entry symbol_table_entry_t;
 typedef struct inner_scope inner_scope_t;
