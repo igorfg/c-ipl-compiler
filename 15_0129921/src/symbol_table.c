@@ -51,13 +51,6 @@ void print_symbol_table(symbol_table_t* symbol_table, int indentation) {
   }
 }
 
-// scope_stack_element_t* add_element_to_stack(scope_stack_element_t* head, char* scope_id) {
-//   scope_stack_element_t* new_scope_stack_element = (scope_stack_element_t*)malloc(sizeof(scope_stack_element_t));
-//   new_scope_stack_element->scope_id = strdup(scope_id);
-//   STACK_PUSH(head, new_scope_stack_element);
-//   return head;
-// }
-
 void free_symbol_table(symbol_table_t* symbol_table) {
   if (symbol_table == NULL) {
     return;
