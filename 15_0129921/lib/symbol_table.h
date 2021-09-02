@@ -10,7 +10,6 @@
 typedef struct symbol_table_entry symbol_table_entry_t;
 typedef struct inner_scope inner_scope_t;
 typedef struct symbol_table symbol_table_t;
-typedef struct scope_stack_element scope_stack_element_t;
 
 struct symbol_table_entry {
   char* id;
@@ -36,16 +35,10 @@ struct inner_scope {
   inner_scope_t* next;
 };
 
-struct scope_stack_element {
-  char* scope_id;
-  scope_stack_element_t* next;
-};
-
 symbol_table_t* initialize_symbol_table(char*);
 void add_symbol_table_entry(symbol_table_t*, char*, char*);
 void add_symbol_table_to_inner_scope(symbol_table_t*, symbol_table_t*);
 void print_symbol_table(symbol_table_t*, int);
-// scope_stack_element_t* add_element_to_stack(scope_stack_element_t*, char*);
 void free_symbol_table(symbol_table_t*);
 
 // Initialize symbol table
