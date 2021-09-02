@@ -16,7 +16,8 @@ extern int yylex_destroy();
 extern FILE* yyin;
 extern int yydestroy();
 extern int current_line;
-extern int current_col;
+extern int previous_col;
+int has_syntax_error = 0;
 
 int yyerror(const char*);
 static void print_grammar_rule(char*);
@@ -66,7 +67,6 @@ static void print_grammar_rule(char*);
 %type<node> list-func-operator
 %type<node> numeric-const
 %type<node> output-arg
-
 
 /* Token declarations */
 %token<terminal_string> INT_TYPE
@@ -150,6 +150,9 @@ declaration:
   | func-declaration {
     $$ = $1;
     print_grammar_rule("declaration func-declaration\0");
+  }
+  | error {
+    has_syntax_error = 1;
   }
 ;
 
@@ -581,7 +584,7 @@ output-arg:
 
 %%
 int yyerror(const char * e) {
-  printf("%s at line %d col %d\n", e, current_line-1, current_col);
+  printf("%s at line %d col %d\n", e, current_line, previous_col);
   return 0;
 }
 
@@ -592,19 +595,20 @@ static void print_grammar_rule(char* grammar_rule) {
 }
 
 int main() {
-  // Initialize scope stack
-  // scope_stack_element_t* scope_stack = NULL;
-  // scope_stack = add_element_to_stack(scope_stack, "global");
   // The root symbol table is the only one without a parent
   symbol_table = initialize_symbol_table("global");
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;
   yyparse();
-  print_symbol_table(symbol_table, 0);
-  printf("Syntax Tree\n");
-  print_syntax_tree(syntax_tree, 0);
-  free_symbol_table(symbol_table);
-  free_syntax_tree(syntax_tree);
+  if (!has_syntax_error) {
+    print_symbol_table(symbol_table, 0);
+    printf("Syntax Tree\n");
+    print_syntax_tree(syntax_tree, 0);
+    free_symbol_table(symbol_table);
+    free_syntax_tree(syntax_tree);
+  } else{
+    printf("Symbol table and syntax tree are not shown when a syntax error occurs\n");
+  }
   yylex_destroy();
   return 0;
 }
