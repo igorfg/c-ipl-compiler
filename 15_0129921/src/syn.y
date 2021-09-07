@@ -200,11 +200,14 @@ func-declaration:
     node_t* data_type = $1;
     node_t* id = initialize_node($2);
     node_t* params_list = $4;
+    node_t* block_statement = $6;
     add_node(func_declaration, data_type);
     add_node(func_declaration, id);
+    // Checks for empty params list
     if (params_list != NULL) {
       add_node(func_declaration, params_list);
     }
+    add_node(func_declaration, block_statement);
     add_symbol_table_entry(current_symbol_table, id->name, "function");
     free($2);
   }
@@ -258,6 +261,7 @@ param:
 block-statement:
   LBRACE statement-or-declaration-list RBRACE {
     print_grammar_rule("block-statement\0");
+    $$ = $2;
   }
 ;
 
@@ -265,12 +269,30 @@ block-statement:
 statement-or-declaration-list:
   statement-or-declaration-list statement {
     print_grammar_rule("statement-or-declaration-list statement\0");
+    $$ = initialize_node("statement-or-declaration-list");
+    node_t* statement_or_declaration_list = $$;
+    node_t* recursive_statement_or_declaration = $1;
+    node_t* statement = $2;
+    if (recursive_statement_or_declaration != NULL) {
+      add_node(statement_or_declaration_list, recursive_statement_or_declaration);
+    }
+    add_node(statement_or_declaration_list, statement);
   }
   | statement-or-declaration-list var-declaration {
     print_grammar_rule("statement-or-declaration-list var-declaration\0");
+    $$ = initialize_node("statement-or-declaration-list");
+    node_t* statement_or_declaration_list = $$;
+    node_t* recursive_statement_or_declaration = $1;
+    node_t* var_declaration = $2;
+    // This checks if the last read symbol was %empty
+    if (recursive_statement_or_declaration != NULL) {
+      add_node(statement_or_declaration_list, recursive_statement_or_declaration);
+    }
+    add_node(statement_or_declaration_list, var_declaration);
   }
   | %empty {
     print_grammar_rule("statement-or-declaration-list empty\0");
+    $$ = NULL;
   }
 ;
 
@@ -278,24 +300,31 @@ statement-or-declaration-list:
 statement:
   expression-statement {
     print_grammar_rule("statement expression-statement\0");
+    $$ = $1;
   }
   | block-statement {
     print_grammar_rule("statement block-statement\0");
+    $$ = $1;
   }
   | conditional-statement {
     print_grammar_rule("statement conditional-statement\0");
+    $$ = $1;
   }
   | iteration-statement {
     print_grammar_rule("statement iteration-statement\0");
+    $$ = $1;
   }
   | return-statement {
     print_grammar_rule("statement return-statement\0");
+    $$ = $1;
   }
   | input-statement {
     print_grammar_rule("statement input-statement\0");
+    $$ = $1;
   }
   | output-statement {
     print_grammar_rule("statement output-statement\0");
+    $$ = $1;
   }
 ;
 
@@ -303,9 +332,11 @@ statement:
 expression-statement:
   expression SEMICOLON {
     print_grammar_rule("expression-statement expression\0");
+    $$ = $1;
   }
   | SEMICOLON {
     print_grammar_rule("expression-statement semicolon\0");
+    $$ = initialize_node("empty-expression-statement");
   }
 ;
 
@@ -313,9 +344,23 @@ expression-statement:
 conditional-statement:
   IF_KW LPARENTHESES expression RPARENTHESES statement {
     print_grammar_rule("conditional-statement IF\0");
+    $$ = initialize_node("if");
+    node_t* conditional_statement = $$;
+    node_t* expression = $3;
+    node_t* statement = $5;
+    add_node(conditional_statement, expression);
+    add_node(conditional_statement, statement);
   }
   | IF_KW LPARENTHESES expression RPARENTHESES statement ELSE_KW statement {
     print_grammar_rule("conditional-statement IF ELSE\0");
+    $$ = initialize_node("if-else");
+    node_t* conditional_statement = $$;
+    node_t* expression = $3;
+    node_t* if_statement = $5;
+    node_t* else_statement = $7;
+    add_node(conditional_statement, expression);
+    add_node(conditional_statement, if_statement);
+    add_node(conditional_statement, else_statement);
   }
 ;
 
@@ -323,6 +368,16 @@ conditional-statement:
 iteration-statement:
   FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOLON expression RPARENTHESES statement {
     print_grammar_rule("iteration-statement\0");
+    $$ = initialize_node("for");
+    node_t* iteration_statement = $$;
+    node_t* first_expression = $3;
+    node_t* second_expression = $5;
+    node_t* third_expression = $7;
+    node_t* statement = $9;
+    add_node(iteration_statement, first_expression);
+    add_node(iteration_statement, second_expression);
+    add_node(iteration_statement, third_expression);
+    add_node(iteration_statement, statement);
   }
 ;
 
@@ -330,9 +385,14 @@ iteration-statement:
 return-statement: 
   RETURN_KW SEMICOLON {
     print_grammar_rule("return-statement void\0");
+    $$ = initialize_node("void-return");
   }
   | RETURN_KW expression SEMICOLON {
     print_grammar_rule("return-statement expression\0");
+    $$ = initialize_node("return");
+    node_t* return_statement = $$;
+    node_t* expression = $2;
+    add_node(return_statement, expression);
   }
 ;
 
@@ -340,6 +400,10 @@ return-statement:
 input-statement: 
   READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON {
     print_grammar_rule("input-statement\0");
+    $$ = initialize_node("read");
+    node_t* input_statement = $$;
+    node_t* id = initialize_node($3);
+    add_node(input_statement, id);
     free($3);
   }
 ;
@@ -348,6 +412,10 @@ input-statement:
 output-statement:
   write-call LPARENTHESES output-arg RPARENTHESES SEMICOLON {
     print_grammar_rule("output-statement simple-expression\0");
+    $$ = $1;
+    node_t* output_statement = $$;
+    node_t* output_arg = $3;
+    add_node(output_statement, output_arg);
   }
 ;
 
@@ -355,9 +423,11 @@ output-statement:
 write-call:
   WRITE_KW {
     print_grammar_rule("write-call write\0");
+    $$ = initialize_node("write");
   }
   | WRITELN_KW {
     print_grammar_rule("write-call writeln\0");
+    $$ = initialize_node("writeln");
   }
 ;
 
@@ -365,10 +435,17 @@ write-call:
 expression:
   ID ASSIGNMENT expression {
     print_grammar_rule("expression assigment\0");
+    $$ = initialize_node("=");
+    node_t* expression = $$;
+    node_t* id = initialize_node($1);
+    node_t* recursive_expression = $3;
+    add_node(expression, id);
+    add_node(expression, recursive_expression);
     free($1);
   }
   | simple-expression {
     print_grammar_rule("expression simple-expression\0");
+    $$ = $1;
   }
 ;
 
@@ -376,18 +453,38 @@ expression:
 simple-expression:
   math-expression relational-operator math-expression {
     print_grammar_rule("simple-expression relational-operator\0");
+    $$ = $2;
+    node_t* simple_expression = $$;
+    node_t* first_math_expression = $1;
+    node_t* second_math_expression = $3;
+    add_node(simple_expression, first_math_expression);
+    add_node(simple_expression, second_math_expression);
   }
   | math-expression binary-logical-operator math-expression {
     print_grammar_rule("simple-expression binary-logical-operator\0");
+    $$ = initialize_node("simple-expression");
+    node_t* simple_expression = $$;
+    node_t* first_math_expression = $1;
+    node_t* binary_logical_operator = $2;
+    node_t* second_math_expression = $3;
+    add_node(simple_expression, first_math_expression);
+    add_node(simple_expression, binary_logical_operator);
+    add_node(simple_expression, second_math_expression);
   }
   | NOT_OR_TAIL_OP math-expression {
     print_grammar_rule("simple-expression not or tail op\0");
+    $$ = initialize_node("not");
+    node_t* simple_expression = $$;
+    node_t* math_expression = $2;
+    add_node(simple_expression, math_expression);
   }
   | math-expression {
     print_grammar_rule("simple-expression math-expression\0");
+    $$ = $1;
   }
   | list-expression {
     print_grammar_rule("simple-expression list-expression");
+    $$ = $1;
   }
 ;
 
@@ -395,21 +492,27 @@ simple-expression:
 relational-operator:
   LESSTHAN_OP {
     print_grammar_rule("relational-operator LESSTHAN\0");
+    $$ = initialize_node("<");
   }
   | LESSEQUAL_OP {
     print_grammar_rule("relational-operator LESSEQUAL\0");
+    $$ = initialize_node("<=");
   }
   | GREATERTHAN_OP {
     print_grammar_rule("relational-operator GREATERTHAN\0");
+    $$ = initialize_node(">");
   }
   | GREATEREQUAL_OP {
     print_grammar_rule("relational-operator GREATEREQUAL\0");
+    $$ = initialize_node(">=");
   }
   | NOTEQUAL_OP {
     print_grammar_rule("relational-operator NOTEQUAL\0");
+    $$ = initialize_node("!=");
   }
   | EQUAL_OP {
     print_grammar_rule("relational-operator EQUAL\0");
+    $$ = initialize_node("==");
   }
 ;
 
@@ -417,9 +520,11 @@ relational-operator:
 binary-logical-operator:
   AND_OP { 
     print_grammar_rule("binary-logical-operator AND\0");
+    $$ = initialize_node($1);
   }
   | OR_OP { 
     print_grammar_rule("binary-logical-operator OR\0");
+    $$ = initialize_node($1);
   }
 ;
 
@@ -427,12 +532,18 @@ binary-logical-operator:
 list-expression:
   list-constructor {
     print_grammar_rule("list-expression list constructor\0");
+    $$ = $1;
   }
   | list-func {
     print_grammar_rule("list-expression list func");
+    $$ = $1;
   }
-  | LIST_TAIL_OP math-expression {
+  | LIST_TAIL_OP ID {
     print_grammar_rule("list-expression list tail\0");
+    $$ = initialize_node("%");
+    node_t* list_expression = $$;
+    node_t* id = initialize_node($2);
+    add_node(list_expression, id);
   }
 ;
 
@@ -440,9 +551,16 @@ list-expression:
 math-expression:
   math-expression add-sub-operator term {
     print_grammar_rule("math-expression add-sub\0");
+    $$ = $2;
+    node_t* math_expression = $$;
+    node_t* recursive_math_expression = $1;
+    node_t* term = $3;
+    add_node(math_expression, recursive_math_expression);
+    add_node(math_expression, term);
   }
   | term {
     print_grammar_rule("math-expression term\0");
+    $$ = $1;
   }
 ;
 
@@ -450,9 +568,11 @@ math-expression:
 add-sub-operator:
   ADD_OP {
     print_grammar_rule("add-sub-operator ADD_OP\0");
+    $$ = initialize_node("+");
   }
   | SUB_OP {
     print_grammar_rule("add-sub-operator SUB_OP\0");
+    $$ = initialize_node("-");
   }
 ;
 
@@ -460,9 +580,18 @@ add-sub-operator:
 term:
   term mul-div-operator factor {
     print_grammar_rule("term mul-div\0");
+    $$ = initialize_node("term");
+    node_t* term = $$;
+    node_t* recursive_term = $1;
+    node_t* mul_div_operator = $2;
+    node_t* factor = $3;
+    add_node(term, recursive_term);
+    add_node(term, mul_div_operator);
+    add_node(term, factor);
   }
   | factor {
     print_grammar_rule("term factor\0");
+    $$ = $1;
   }
 ;
 
@@ -470,9 +599,11 @@ term:
 mul-div-operator:
   MULT_OP {
     print_grammar_rule("mul-div-operator mult\0");
+    $$ = initialize_node("*");
   }
   | DIV_OP {
     print_grammar_rule("mul-div-operator div\0");
+    $$ = initialize_node("/");
   }
 ;
 
@@ -480,23 +611,32 @@ mul-div-operator:
 factor: 
   LPARENTHESES expression RPARENTHESES {
     print_grammar_rule("factor expression\0");
+    $$ = $2;
   }
   | func-call {
     print_grammar_rule("factor func-call\0");
+    $$ = $1;
   }
   | numeric-const {
     print_grammar_rule("factor numeric-const\0");
+    $$ = $1;
   }
   | LIST_HEAD_OP ID {
     print_grammar_rule("factor list head\0");
+    $$ = initialize_node("?");
+    node_t* factor = $$;
+    node_t* id = initialize_node($2);
+    add_node(factor, id);
     free($2);
   }
   | ID {
     print_grammar_rule("factor id\0");
+    $$ = initialize_node($1);
     free($1);
   }
   | LIST_CONST {
     print_grammar_rule("factor list const\0");
+    $$ = initialize_node("NIL");
   }
 ;
 
@@ -504,6 +644,12 @@ factor:
 func-call:
   ID LPARENTHESES args-list RPARENTHESES {
     print_grammar_rule("func-call\0");
+    $$ = initialize_node("func-call");
+    node_t* func_call = $$;
+    node_t* id = initialize_node($1);
+    node_t* args_list = $3;
+    add_node(func_call, id);
+    add_node(func_call, args_list);
     free($1);
   }
 ;
@@ -512,9 +658,11 @@ func-call:
 args-list:
   args {
     print_grammar_rule("args-list args\0");
+    $$ = $1;
   }
   | %empty {
     print_grammar_rule("args-list empty\0");
+    $$ = initialize_node("empty-args-list");
   }
 ;
 
@@ -522,9 +670,19 @@ args-list:
 args:
   args COMMA expression {
     print_grammar_rule("args multiple args\0");
+    $$ = initialize_node("args");
+    node_t* args = $$;
+    node_t* recursive_args = $1;
+    node_t* expression = $3;
+    add_node(args, recursive_args);
+    add_node(args, expression);
   }
   | expression {
     print_grammar_rule("args expression\0");
+    $$ = initialize_node("args");
+    node_t* args = $$;
+    node_t* expression = $1;
+    add_node(args, expression);
   }
 ;
 
@@ -532,6 +690,12 @@ args:
 list-constructor:
   list-constructor-expression LIST_CONSTRUCTOR_OP ID {
     print_grammar_rule("list-constructor\0");
+    $$ = initialize_node(":");
+    node_t* list_constructor = $$;
+    node_t* list_constructor_expression = $1;
+    node_t* id = initialize_node($3);
+    add_node(list_constructor, list_constructor_expression);
+    add_node(list_constructor, id);
     free($3);
   }
 ;
@@ -540,9 +704,16 @@ list-constructor:
 list-constructor-expression:
   list-constructor-expression LIST_CONSTRUCTOR_OP math-expression {
     print_grammar_rule("list-constructor-expression adding expression\0");
+    $$ = initialize_node(":");
+    node_t* list_constructor_expression = $$;
+    node_t* recursive_list_constructor_expression = $1;
+    node_t* math_expression = $3;
+    add_node(list_constructor_expression, recursive_list_constructor_expression);
+    add_node(list_constructor_expression, math_expression);
   }
   | math-expression {
     print_grammar_rule("list-constructor-expression finished\0");
+    $$ = $1;
   }
 ;
 
@@ -550,6 +721,12 @@ list-constructor-expression:
 list-func:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func\0");
+    $$ = $2;
+    node_t* list_func = $$;
+    node_t* list_func_expression = $1;
+    node_t* id = initialize_node($3);
+    add_node(list_func, list_func_expression);
+    add_node(list_func, id);
     free($3);
   }
 ;
@@ -558,10 +735,17 @@ list-func:
 list-func-expression:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func-expression multiple");
+    $$ = $2;
+    node_t* list_func_expression = $$;
+    node_t* recursive_list_func_expression = $1;
+    node_t* id = initialize_node($3);
+    add_node(list_func_expression, recursive_list_func_expression);
+    add_node(list_func_expression, id);
     free($3);
   }
   | ID {
     print_grammar_rule("list-func-expression single id");
+    $$ = initialize_node($1);
     free($1);
   }
 ;
@@ -570,9 +754,11 @@ list-func-expression:
 list-func-operator:
   LIST_MAP_OP {
     print_grammar_rule("list-func-operator map");
+    $$ = initialize_node(">>");
   }
   | LIST_FILTER_OP {
     print_grammar_rule("list-func-operator filter");
+    $$ = initialize_node("<<");
   }
 ;
 
@@ -580,15 +766,29 @@ list-func-operator:
 numeric-const:
   add-sub-operator FLOAT_CONST {
     print_grammar_rule("numeric-const signed float const\0");
+    $$ = $1;
+    node_t* numeric_const = $$;
+    node_t* float_const = initialize_node($2);
+    add_node(numeric_const, float_const);
+    free($2);
   }
   | add-sub-operator INT_CONST {
     print_grammar_rule("numeric-const signed int const\0");
+    $$ = $1;
+    node_t* numeric_const = $$;
+    node_t* float_const = initialize_node($2);
+    add_node(numeric_const, float_const);
+    free($2);
   }
   | FLOAT_CONST {
     print_grammar_rule("numeric-const unsgigned float const\0");
+    $$ = initialize_node($1);
+    free($1);
   }
   | INT_CONST {
     print_grammar_rule("numeric-const unsigned int const\0");
+    $$ = initialize_node($1);
+    free($1);
   }
 ;
 
@@ -596,9 +796,12 @@ numeric-const:
 output-arg:
   simple-expression {
     print_grammar_rule("output-arg simple-expression");
+    $$ = $1;
   }
   | STRING_CONST {
     print_grammar_rule("output-arg string const");
+    $$ = initialize_node($1);
+    free($1);
   }
 ;
 

@@ -74,10 +74,29 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
   /* Char os string constant with single or double quotes */
 
   /* Constants */
-{INT_CONST}                 { update_position(1); print_token("INT_CONST\0", yytext); return INT_CONST; }
-{FLOAT_CONST}               { update_position(1); print_token("FLOAT_CONST\0", yytext); return FLOAT_CONST; }
-{LIST_CONST}                { update_position(1); print_token("LIST_CONST\0", yytext); return LIST_CONST; }
-{STRING_CONST}              { update_position(1); print_token("STRING_CONST\0", yytext); return STRING_CONST; }
+{INT_CONST}                 { 
+                              update_position(1);
+                              print_token("INT_CONST\0", yytext);
+                              yylval.terminal_string = (char*) strdup(yytext);
+                              return INT_CONST;
+                            }
+{FLOAT_CONST}               {
+                              update_position(1);
+                              print_token("FLOAT_CONST\0", yytext);
+                              yylval.terminal_string = (char*) strdup(yytext);
+                              return FLOAT_CONST;
+                            }
+{LIST_CONST}                {
+                              update_position(1);
+                              print_token("LIST_CONST\0", yytext);
+                              return LIST_CONST;
+                            }
+{STRING_CONST}              {
+                              update_position(1);
+                              print_token("STRING_CONST\0", yytext);
+                              yylval.terminal_string = (char*) strdup(yytext);
+                              return STRING_CONST;
+                            }
 {UNIFINISHED_STRING_CONST}  { 
                               printf("Error: \" at line %d, column %d does not have a closing \"\n", current_line, current_col);
                               update_position(0);
