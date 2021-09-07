@@ -15,6 +15,7 @@ typedef struct func_param func_param_t;
 struct symbol_table_entry {
   char* id;
   char* data_type;
+  int is_function;
   union {
     int32_t int_type;
     float float_type;
@@ -31,7 +32,7 @@ struct func_param {
 };
 
 struct symbol_table {
-  char* scope_id;
+  int scope_id;
   symbol_table_t* parent;
   symbol_table_entry_t* entries;
   inner_scope_t* inner_scopes;
@@ -43,8 +44,8 @@ struct inner_scope {
   inner_scope_t* next;
 };
 
-symbol_table_t* initialize_symbol_table(char*);
-void add_symbol_table_entry(symbol_table_t*, char*, char*);
+symbol_table_t* initialize_symbol_table(int);
+void add_symbol_table_entry(symbol_table_t*, char*, char*, int);
 void add_symbol_table_to_inner_scope(symbol_table_t*, symbol_table_t*);
 void print_symbol_table(symbol_table_t*, int);
 void free_symbol_table(symbol_table_t*);

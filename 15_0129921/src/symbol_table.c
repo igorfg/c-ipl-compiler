@@ -1,20 +1,21 @@
 #include "symbol_table.h"
 
-symbol_table_t* initialize_symbol_table(char* id) {
+symbol_table_t* initialize_symbol_table(int id) {
   symbol_table_t *new_symbol_table = NULL;
   new_symbol_table = (symbol_table_t*)malloc(sizeof(symbol_table_t));
-  new_symbol_table->scope_id = strdup(id);
+  new_symbol_table->scope_id = id;
   new_symbol_table->parent = NULL;
   new_symbol_table->entries = NULL;
   new_symbol_table->inner_scopes = NULL;
   return new_symbol_table;
 }
 
-void add_symbol_table_entry(symbol_table_t* symbol_table, char* id, char* data_type) {
+void add_symbol_table_entry(symbol_table_t* symbol_table, char* id, char* data_type, int is_function) {
   symbol_table_entry_t *new_symbol_table_entry = NULL;
   new_symbol_table_entry = (symbol_table_entry_t*)malloc(sizeof(symbol_table_entry_t));
   new_symbol_table_entry->id = strdup(id);
   new_symbol_table_entry->data_type = strdup(data_type);
+  new_symbol_table_entry->is_function = is_function;
   DL_APPEND(symbol_table->entries, new_symbol_table_entry);
 }
 
@@ -30,18 +31,29 @@ void print_symbol_table(symbol_table_t* symbol_table, int indentation) {
     return;
   }
 
-  printf("\n%*sSymbol Table: %s\n", indentation, "", symbol_table->scope_id);
-  printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
+  if (symbol_table->parent != NULL) {
+    printf("\n%*sSymbol Table: %d, Parent Table: %d\n", indentation, "", symbol_table->scope_id, symbol_table->parent->scope_id);
+  } else {
+    printf("\n%*sSymbol Table: %d, Parent Table: None\n", indentation, "", symbol_table->scope_id);
+  }
+  printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
 
   if (symbol_table->entries == NULL) {
-    printf("%*s|                                       EMPTY                                      |\n", indentation, "");
-    printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
+    printf("%*s|                                    EMPTY                                    |\n", indentation, "");
+    printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
   } else {
+    printf("%*s| %-32s | %-12s | %-12s |\n", indentation, "", "Identifier", "Data / Return Type", "Function / Variable");
+    printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
+
     // Iterates through every symbol table entry
     symbol_table_entry_t * entry;
     DL_FOREACH(symbol_table->entries, entry) {
-      printf("%*s|%-32s | %-12s | %-32s|\n", indentation, "", entry->id, entry->data_type, symbol_table->scope_id);
-      printf("%*s------------------------------------------------------------------------------------\n", indentation, "");
+      if (entry->is_function) {
+        printf("%*s| %-32s | %-18s | %-19s |\n", indentation, "", entry->id, entry->data_type, "function");
+      } else {
+        printf("%*s| %-32s | %-18s | %-19s |\n", indentation, "", entry->id, entry->data_type, "var");
+      }
+      printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
     }
 
     inner_scope_t* inner_scope;
@@ -74,7 +86,6 @@ void free_symbol_table(symbol_table_t* symbol_table) {
     free(entry);
   }
 
-  free(symbol_table->scope_id);
   free(symbol_table);
 }
 
@@ -91,7 +102,7 @@ void add_params_to_symbol_table(symbol_table_t* symbol_table) {
     func_param_t* tmp;
 
     DL_FOREACH_SAFE(func_params_list, param, tmp) {
-      add_symbol_table_entry(symbol_table, param->id, param->data_type);
+      add_symbol_table_entry(symbol_table, param->id, param->data_type, 0);
       DL_DELETE(func_params_list, param);
       free(param->id);
       free(param->data_type);

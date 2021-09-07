@@ -17,6 +17,7 @@ extern FILE* yyin;
 extern int yydestroy();
 extern int current_line;
 extern int previous_col;
+extern int symbol_table_scope;
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -166,7 +167,7 @@ var-declaration:
     node_t* id = initialize_node($2);
     add_node(var_declaration, data_type);
     add_node(var_declaration, id);
-    add_symbol_table_entry(current_symbol_table, id->name, data_type->name);
+    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0);
     free($2);
   }
 ;
@@ -208,7 +209,7 @@ func-declaration:
       add_node(func_declaration, params_list);
     }
     add_node(func_declaration, block_statement);
-    add_symbol_table_entry(current_symbol_table, id->name, "function");
+    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1);
     free($2);
   }
 ;
@@ -820,7 +821,7 @@ static void print_grammar_rule(char* grammar_rule) {
 int main() {
   func_params_list = NULL;
   // The root symbol table is the only one without a parent
-  symbol_table = initialize_symbol_table("global");
+  symbol_table = initialize_symbol_table(symbol_table_scope);
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;
   yyparse();
