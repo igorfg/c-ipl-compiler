@@ -1,2 +1,6 @@
 Outros\ exemplos/
 lex.yy.c
+settings.json
+logfile.out
+syn.tab.c
+tradutor
