@@ -77,3 +77,26 @@ void free_symbol_table(symbol_table_t* symbol_table) {
   free(symbol_table->scope_id);
   free(symbol_table);
 }
+
+void save_func_param(char* id, char* data_type) {
+  func_param_t* param = (func_param_t*)malloc(sizeof(func_param_t));
+  param->data_type = strdup(data_type);
+  param->id = strdup(id);
+  DL_APPEND(func_params_list, param);
+}
+
+void add_params_to_symbol_table(symbol_table_t* symbol_table) {
+  if (func_params_list != NULL) {    
+    func_param_t* param;
+    func_param_t* tmp;
+
+    DL_FOREACH_SAFE(func_params_list, param, tmp) {
+      add_symbol_table_entry(symbol_table, param->id, param->data_type);
+      DL_DELETE(func_params_list, param);
+      free(param->id);
+      free(param->data_type);
+      free(param);
+    }
+    func_params_list = NULL;
+  }
+}

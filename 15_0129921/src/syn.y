@@ -199,8 +199,12 @@ func-declaration:
     node_t* func_declaration = $$;
     node_t* data_type = $1;
     node_t* id = initialize_node($2);
+    node_t* params_list = $4;
     add_node(func_declaration, data_type);
     add_node(func_declaration, id);
+    if (params_list != NULL) {
+      add_node(func_declaration, params_list);
+    }
     add_symbol_table_entry(current_symbol_table, id->name, "function");
     free($2);
   }
@@ -210,9 +214,11 @@ func-declaration:
 params-list:
   params {
     print_grammar_rule("params-list params\0");
+    $$ = $1;
   }
   | %empty {
     print_grammar_rule("params-list empty\0");
+    $$ = NULL;
   }
 ;
 
@@ -220,9 +226,16 @@ params-list:
 params: 
   params COMMA param {
     print_grammar_rule("params multiple params\0");
+    $$ = initialize_node("params");
+    node_t* params = $$;
+    node_t* recursive_params = $1;
+    node_t* param = $3;
+    add_node(params, recursive_params);
+    add_node(params, param);
   }
   | param {
     print_grammar_rule("params single param\0");
+    $$ = $1;
   }
 ;
 
@@ -230,6 +243,13 @@ params:
 param:
   data-type ID {
     print_grammar_rule("param\0");
+    $$ = initialize_node("param");
+    node_t* param = $$;
+    node_t* data_type = $1;
+    node_t* id = initialize_node($2);
+    add_node(param, data_type);
+    add_node(param, id);
+    save_func_param(id->name, data_type->name);
     free($2);
   }
 ;
@@ -595,6 +615,7 @@ static void print_grammar_rule(char* grammar_rule) {
 }
 
 int main() {
+  func_params_list = NULL;
   // The root symbol table is the only one without a parent
   symbol_table = initialize_symbol_table("global");
   // At first our current symbol table is the root symbol table

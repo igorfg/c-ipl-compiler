@@ -118,6 +118,7 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
                               inner_symbol_table = initialize_symbol_table("inner_symbol_table");
                               add_symbol_table_to_inner_scope(current_symbol_table, inner_symbol_table);
                               current_symbol_table = inner_symbol_table;
+                              add_params_to_symbol_table(current_symbol_table);
                               return LBRACE;
                             }
 "}"                         {
