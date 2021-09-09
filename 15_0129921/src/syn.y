@@ -18,6 +18,7 @@ extern int yydestroy();
 extern int current_line;
 extern int previous_col;
 extern int symbol_table_scope;
+extern symbol_table_t* last_child;
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -39,7 +40,7 @@ static void print_grammar_rule(char*);
 %type<node> params
 %type<node> param
 %type<node> block-statement
-%type<node> statement-or-declaration-list
+%type<node> statement-list
 %type<node> statement
 %type<node> expression-statement
 %type<node> conditional-statement
@@ -172,7 +173,22 @@ var-declaration:
     node_t* id = initialize_node($2);
     add_node(var_declaration, data_type);
     add_node(var_declaration, id);
-    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0);
+
+    /* 
+      This is probably not a good solution but whenever the parser tries to find a match to a variable declaration is always looks ahead.
+      In case the lookahead symbol is either a '{' or a '}' the symbol table context will be changed by the lexer for the parent or the last child, respectively.
+      What I do here is simply guarantee that the symbol table entry is being correctly placed by checking the lookahead symbol first.
+      https://www.gnu.org/software/bison/manual/html_node/Lookahead.html
+    */
+    if (yychar == LBRACE) {
+      printf("lookahead %d\n", yychar);
+      add_symbol_table_entry(current_symbol_table->parent, id->name, data_type->name, 0);
+    } else if (yychar == RBRACE) {
+      add_symbol_table_entry(last_child, id->name, data_type->name, 0);
+    }
+    else {
+      add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0);
+    }
     free($2);
   }
 ;
@@ -265,40 +281,32 @@ param:
 
 // 10
 block-statement:
-  LBRACE statement-or-declaration-list RBRACE {
+  LBRACE statement-list RBRACE {
     print_grammar_rule("block-statement\0");
     $$ = $2;
+  }
+  | LBRACE RBRACE {
+    print_grammar_rule("block-statement empty\0");
+    $$ = initialize_node("empty-block-statement");
   }
 ;
 
 // 11
-statement-or-declaration-list:
-  statement-or-declaration-list statement {
-    print_grammar_rule("statement-or-declaration-list statement\0");
-    $$ = initialize_node("statement-or-declaration-list");
-    node_t* statement_or_declaration_list = $$;
-    node_t* recursive_statement_or_declaration = $1;
+statement-list:
+  statement-list statement {
+    print_grammar_rule("statement-list recursive\0");
+    $$ = initialize_node("statement-list");
+    node_t* statement_list = $$;
+    node_t* recursive_statement_list = $1;
     node_t* statement = $2;
-    if (recursive_statement_or_declaration != NULL) {
-      add_node(statement_or_declaration_list, recursive_statement_or_declaration);
+    if (recursive_statement_list != NULL) {
+      add_node(statement_list, recursive_statement_list);
     }
-    add_node(statement_or_declaration_list, statement);
+    add_node(statement_list, statement);
   }
-  | statement-or-declaration-list var-declaration {
-    print_grammar_rule("statement-or-declaration-list var-declaration\0");
-    $$ = initialize_node("statement-or-declaration-list");
-    node_t* statement_or_declaration_list = $$;
-    node_t* recursive_statement_or_declaration = $1;
-    node_t* var_declaration = $2;
-    // This checks if the last read symbol was %empty
-    if (recursive_statement_or_declaration != NULL) {
-      add_node(statement_or_declaration_list, recursive_statement_or_declaration);
-    }
-    add_node(statement_or_declaration_list, var_declaration);
-  }
-  | %empty {
-    print_grammar_rule("statement-or-declaration-list empty\0");
-    $$ = initialize_node("empty");
+  | statement {
+    print_grammar_rule("statement-list statement\0");
+    $$ = $1;
   }
 ;
 
@@ -330,6 +338,10 @@ statement:
   }
   | output-statement {
     print_grammar_rule("statement output-statement\0");
+    $$ = $1;
+  }
+  | var-declaration {
+    print_grammar_rule("statement var-declaration\0");
     $$ = $1;
   }
 ;
@@ -569,6 +581,7 @@ list-expression:
     node_t* list_expression = $$;
     node_t* id = initialize_node($2);
     add_node(list_expression, id);
+    free($2);
   }
 ;
 

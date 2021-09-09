@@ -20,6 +20,7 @@ int current_col = 1;
 int previous_col;
 int comment_block_line_begin;
 int symbol_table_scope = 0;
+symbol_table_t* last_child = NULL;
 %}
 
 /* Directives for comment block or comment lines */
@@ -144,6 +145,7 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
 "}"                         {
                               update_position(1);
                               print_token("RBRACE\0", yytext);
+                              last_child = current_symbol_table;
                               current_symbol_table = current_symbol_table->parent;
                               return RBRACE;
                             }
