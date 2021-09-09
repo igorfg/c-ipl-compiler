@@ -55,11 +55,11 @@ void print_symbol_table(symbol_table_t* symbol_table, int indentation) {
       }
       printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
     }
+  }
 
-    inner_scope_t* inner_scope;
-    DL_FOREACH(symbol_table->inner_scopes, inner_scope) {
-      print_symbol_table(inner_scope->symbol_table, indentation + 2);
-    }
+  inner_scope_t* inner_scope;
+  DL_FOREACH(symbol_table->inner_scopes, inner_scope) {
+    print_symbol_table(inner_scope->symbol_table, indentation + 2);
   }
 }
 
