@@ -44,6 +44,7 @@ static void print_grammar_rule(char*);
 %type<node> expression-statement
 %type<node> conditional-statement
 %type<node> iteration-statement
+%type<node> expression-or-empty
 %type<node> return-statement
 %type<node> input-statement
 %type<node> output-statement
@@ -60,6 +61,7 @@ static void print_grammar_rule(char*);
 %type<node> term
 %type<node> mul-div-operator
 %type<node> not-expression
+%type<node> unary-sign-expression
 %type<node> factor
 %type<node> func-call
 %type<node> args-list
@@ -296,7 +298,7 @@ statement-or-declaration-list:
   }
   | %empty {
     print_grammar_rule("statement-or-declaration-list empty\0");
-    $$ = NULL;
+    $$ = initialize_node("empty");
   }
 ;
 
@@ -370,7 +372,7 @@ conditional-statement:
 
 // 15
 iteration-statement:
-  FOR_KW LPARENTHESES expression SEMICOLON expression SEMICOLON expression RPARENTHESES statement {
+  FOR_KW LPARENTHESES expression-or-empty SEMICOLON expression-or-empty SEMICOLON expression-or-empty RPARENTHESES statement {
     print_grammar_rule("iteration-statement\0");
     $$ = initialize_node("for");
     node_t* iteration_statement = $$;
@@ -382,6 +384,18 @@ iteration-statement:
     add_node(iteration_statement, second_expression);
     add_node(iteration_statement, third_expression);
     add_node(iteration_statement, statement);
+  }
+;
+
+// 16
+expression-or-empty:
+  expression {
+    print_grammar_rule("expression-or-empty expression\0");
+    $$ = $1;
+  }
+  | %empty {
+    print_grammar_rule("expression-or-empty empty\0");
+    $$ = initialize_node("empty-expression");
   }
 ;
 
@@ -625,10 +639,25 @@ not-expression:
     node_t* recursive_not_expression = $2;
     add_node(not_expression, recursive_not_expression);
   }
-  | factor {
-    print_grammar_rule("not-expressional factor");
+  | unary-sign-expression {
+    print_grammar_rule("not-expressional unary-sign-expression");
     $$ = $1;
   };
+;
+
+// 32
+unary-sign-expression:
+  add-sub-operator unary-sign-expression {
+    print_grammar_rule("unary-sign-expression recursive\0");
+    $$ = $1;
+    node_t* unary_sign_expression = $$;
+    node_t* recursive_unary_sign_expression = $2;
+    add_node(unary_sign_expression, recursive_unary_sign_expression);
+  }
+  | factor {
+    print_grammar_rule("unary-sign-expression factor\0");
+    $$ = $1;
+  }
 ;
 
 // 32
@@ -788,23 +817,7 @@ list-func-operator:
 
 // 41
 numeric-const:
-  add-sub-operator FLOAT_CONST {
-    print_grammar_rule("numeric-const signed float const\0");
-    $$ = $1;
-    node_t* numeric_const = $$;
-    node_t* float_const = initialize_node($2);
-    add_node(numeric_const, float_const);
-    free($2);
-  }
-  | add-sub-operator INT_CONST {
-    print_grammar_rule("numeric-const signed int const\0");
-    $$ = $1;
-    node_t* numeric_const = $$;
-    node_t* float_const = initialize_node($2);
-    add_node(numeric_const, float_const);
-    free($2);
-  }
-  | FLOAT_CONST {
+  FLOAT_CONST {
     print_grammar_rule("numeric-const unsgigned float const\0");
     $$ = initialize_node($1);
     free($1);
