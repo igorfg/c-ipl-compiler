@@ -50,6 +50,8 @@ static void print_grammar_rule(char*);
 %type<node> write-call
 %type<node> expression
 %type<node> simple-expression
+%type<node> logical-expression
+%type<node> relational-expression
 %type<node> relational-operator
 %type<node> binary-logical-operator
 %type<node> list-expression
@@ -57,6 +59,7 @@ static void print_grammar_rule(char*);
 %type<node> add-sub-operator
 %type<node> term
 %type<node> mul-div-operator
+%type<node> not-expression
 %type<node> factor
 %type<node> func-call
 %type<node> args-list
@@ -452,35 +455,8 @@ expression:
 
 // 21
 simple-expression:
-  math-expression relational-operator math-expression {
-    print_grammar_rule("simple-expression relational-operator\0");
-    $$ = $2;
-    node_t* simple_expression = $$;
-    node_t* first_math_expression = $1;
-    node_t* second_math_expression = $3;
-    add_node(simple_expression, first_math_expression);
-    add_node(simple_expression, second_math_expression);
-  }
-  | math-expression binary-logical-operator math-expression {
-    print_grammar_rule("simple-expression binary-logical-operator\0");
-    $$ = initialize_node("simple-expression");
-    node_t* simple_expression = $$;
-    node_t* first_math_expression = $1;
-    node_t* binary_logical_operator = $2;
-    node_t* second_math_expression = $3;
-    add_node(simple_expression, first_math_expression);
-    add_node(simple_expression, binary_logical_operator);
-    add_node(simple_expression, second_math_expression);
-  }
-  | NOT_OR_TAIL_OP math-expression {
-    print_grammar_rule("simple-expression not or tail op\0");
-    $$ = initialize_node("not");
-    node_t* simple_expression = $$;
-    node_t* math_expression = $2;
-    add_node(simple_expression, math_expression);
-  }
-  | math-expression {
-    print_grammar_rule("simple-expression math-expression\0");
+  logical-expression {
+    print_grammar_rule("simple-expression logic-expression\0");
     $$ = $1;
   }
   | list-expression {
@@ -490,6 +466,52 @@ simple-expression:
 ;
 
 // 22
+logical-expression:
+  logical-expression binary-logical-operator relational-expression {
+    print_grammar_rule("logical-expression recursive\0");
+    $$ = $2;
+    node_t* logical_expression = $$;
+    node_t* recursive_logical_expression = $1;
+    node_t* relational_expression = $3;
+    add_node(logical_expression, recursive_logical_expression);
+    add_node(logical_expression, relational_expression);
+  }
+  | relational-expression {
+    print_grammar_rule("logical-expression relational-expression\0");
+    $$ = $1;
+  }
+;
+
+// 23
+binary-logical-operator:
+  AND_OP { 
+    print_grammar_rule("binary-logical-operator AND\0");
+    $$ = initialize_node("&&");
+  }
+  | OR_OP { 
+    print_grammar_rule("binary-logical-operator OR\0");
+    $$ = initialize_node("||");
+  }
+;
+
+// 24
+relational-expression:
+  relational-expression relational-operator math-expression {
+    print_grammar_rule("relational-expression recursive\0");
+    $$ = $2;
+    node_t* relational_expression = $$;
+    node_t* recursive_relational_expression = $1;
+    node_t* math_expression = $3;
+    add_node(relational_expression, recursive_relational_expression);
+    add_node(relational_expression, math_expression);
+  }
+  | math-expression {
+    print_grammar_rule("relational-expression math-expression\0");
+    $$ = $1;
+  }
+;
+
+// 25
 relational-operator:
   LESSTHAN_OP {
     print_grammar_rule("relational-operator LESSTHAN\0");
@@ -517,19 +539,7 @@ relational-operator:
   }
 ;
 
-// 23
-binary-logical-operator:
-  AND_OP { 
-    print_grammar_rule("binary-logical-operator AND\0");
-    $$ = initialize_node($1);
-  }
-  | OR_OP { 
-    print_grammar_rule("binary-logical-operator OR\0");
-    $$ = initialize_node($1);
-  }
-;
-
-// 24
+// 26
 list-expression:
   list-constructor {
     print_grammar_rule("list-expression list constructor\0");
@@ -548,7 +558,7 @@ list-expression:
   }
 ;
 
-// 25
+// 27
 math-expression:
   math-expression add-sub-operator term {
     print_grammar_rule("math-expression add-sub\0");
@@ -565,7 +575,7 @@ math-expression:
   }
 ;
 
-// 26
+// 28
 add-sub-operator:
   ADD_OP {
     print_grammar_rule("add-sub-operator ADD_OP\0");
@@ -577,26 +587,24 @@ add-sub-operator:
   }
 ;
 
-// 27
+// 29
 term:
-  term mul-div-operator factor {
+  term mul-div-operator not-expression {
     print_grammar_rule("term mul-div\0");
-    $$ = initialize_node("term");
+    $$ = $2;
     node_t* term = $$;
     node_t* recursive_term = $1;
-    node_t* mul_div_operator = $2;
-    node_t* factor = $3;
+    node_t* not_expression = $3;
     add_node(term, recursive_term);
-    add_node(term, mul_div_operator);
-    add_node(term, factor);
+    add_node(term, not_expression);
   }
-  | factor {
+  | not-expression {
     print_grammar_rule("term factor\0");
     $$ = $1;
   }
 ;
 
-// 28
+// 30
 mul-div-operator:
   MULT_OP {
     print_grammar_rule("mul-div-operator mult\0");
@@ -608,7 +616,22 @@ mul-div-operator:
   }
 ;
 
-// 29
+// 31
+not-expression:
+  NOT_OR_TAIL_OP not-expression {
+    print_grammar_rule("not-expression recursive\0");
+    $$ = initialize_node("!");
+    node_t* not_expression = $$;
+    node_t* recursive_not_expression = $2;
+    add_node(not_expression, recursive_not_expression);
+  }
+  | factor {
+    print_grammar_rule("not-expressional factor");
+    $$ = $1;
+  };
+;
+
+// 32
 factor: 
   LPARENTHESES expression RPARENTHESES {
     print_grammar_rule("factor expression\0");
@@ -641,7 +664,7 @@ factor:
   }
 ;
 
-// 30
+// 33
 func-call:
   ID LPARENTHESES args-list RPARENTHESES {
     print_grammar_rule("func-call\0");
@@ -655,7 +678,7 @@ func-call:
   }
 ;
 
-// 31
+// 34
 args-list:
   args {
     print_grammar_rule("args-list args\0");
@@ -667,7 +690,7 @@ args-list:
   }
 ;
 
-// 32
+// 35
 args:
   args COMMA expression {
     print_grammar_rule("args multiple args\0");
@@ -687,7 +710,7 @@ args:
   }
 ;
 
-// 33
+// 36
 list-constructor:
   list-constructor-expression LIST_CONSTRUCTOR_OP ID {
     print_grammar_rule("list-constructor\0");
@@ -701,7 +724,7 @@ list-constructor:
   }
 ;
 
-// 34
+// 37
 list-constructor-expression:
   list-constructor-expression LIST_CONSTRUCTOR_OP math-expression {
     print_grammar_rule("list-constructor-expression adding expression\0");
@@ -718,7 +741,7 @@ list-constructor-expression:
   }
 ;
 
-// 35
+// 38
 list-func:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func\0");
@@ -732,7 +755,7 @@ list-func:
   }
 ;
 
-// 36
+// 39
 list-func-expression:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func-expression multiple");
@@ -751,7 +774,7 @@ list-func-expression:
   }
 ;
 
-// 37
+// 40
 list-func-operator:
   LIST_MAP_OP {
     print_grammar_rule("list-func-operator map");
@@ -763,7 +786,7 @@ list-func-operator:
   }
 ;
 
-// 38
+// 41
 numeric-const:
   add-sub-operator FLOAT_CONST {
     print_grammar_rule("numeric-const signed float const\0");
@@ -793,7 +816,7 @@ numeric-const:
   }
 ;
 
-// 39
+// 42
 output-arg:
   simple-expression {
     print_grammar_rule("output-arg simple-expression");
