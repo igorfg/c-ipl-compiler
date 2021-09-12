@@ -10,6 +10,7 @@ node_t* initialize_node(char* name) {
   node->node_list = NULL;
   node->name = strdup(name);
   // printf("initialize_node %s\n", node->name);
+  add_node_to_error_recovery_list(node);
   return node;
 }
 
@@ -40,4 +41,21 @@ void free_syntax_tree(node_t* node) {
   // printf("free %s\n", node->name);
   free(node->name);
   free(node);
+}
+
+void add_node_to_error_recovery_list(node_t* node) {
+  node_recovery_t* node_recovery = (node_recovery_t*)malloc(sizeof(node_recovery_t));
+  node_recovery->node = node;
+  DL_APPEND(error_recovery_node_list, node_recovery);
+}
+
+void free_error_recovery_list() {
+  node_recovery_t* node_recovery;
+  node_recovery_t* tmp_node_recovery;
+  DL_FOREACH_SAFE(error_recovery_node_list, node_recovery, tmp_node_recovery) {
+    free(node_recovery->node->name);
+    free(node_recovery->node);
+    DL_DELETE(error_recovery_node_list, node_recovery);
+    free(node_recovery);
+  }
 }

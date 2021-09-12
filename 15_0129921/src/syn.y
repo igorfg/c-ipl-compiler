@@ -9,7 +9,7 @@
 #include "symbol_table.h"
 #include "syntax_tree.h"
 
-#define SYN_DEBUG_MODE
+// #define SYN_DEBUG_MODE
 
 extern int yylex();
 extern int yylex_destroy();
@@ -117,6 +117,10 @@ static void print_grammar_rule(char*);
 %token<terminal_string> WRITE_KW
 %token<terminal_string> WRITELN_KW
 %token<terminal_string> ID
+
+%destructor {
+  free($$);
+} ID INT_CONST FLOAT_CONST STRING_CONST
 
 // Solve ambiguity conflict
 %right RPARENTHESES ELSE_KW
@@ -874,20 +878,33 @@ static void print_grammar_rule(char* grammar_rule) {
 
 int main() {
   func_params_list = NULL;
+  /*
+    We save a list of pointer to our AST nodes because when a syntax error occurs the
+    tree might not include all nodes and thus we lose some node references resulting in memory leaks
+  */
+  error_recovery_node_list = NULL;
+
   // The root symbol table is the only one without a parent
   symbol_table = initialize_symbol_table(symbol_table_scope);
+
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;
+
+  // Initialize parsing
   yyparse();
   print_symbol_table(symbol_table, 0);
-  free_symbol_table(symbol_table);
   if (!has_syntax_error) {
     printf("Syntax Tree\n");
     print_syntax_tree(syntax_tree, 0);
-    free_syntax_tree(syntax_tree);
   } else{
     printf("Syntax tree is not shown when a syntax error occurs\n");
   }
+
+  // Free Symbol Table
+  free_symbol_table(symbol_table);
+
+  // Free AST
+  free_error_recovery_list();
   yylex_destroy();
   return 0;
 }
