@@ -9,7 +9,7 @@
 #include "symbol_table.h"
 #include "syntax_tree.h"
 
-// #define SYN_DEBUG_MODE
+#define SYN_DEBUG_MODE
 
 extern int yylex();
 extern int yylex_destroy();
@@ -160,6 +160,7 @@ declaration:
   }
   | error {
     has_syntax_error = 1;
+    $$ = initialize_node("error");
   }
 ;
 
@@ -343,6 +344,10 @@ statement:
   | var-declaration {
     print_grammar_rule("statement var-declaration\0");
     $$ = $1;
+  }
+  | error {
+    has_syntax_error = 1;
+    $$ = initialize_node("error");
   }
 ;
 
@@ -874,14 +879,14 @@ int main() {
   // At first our current symbol table is the root symbol table
   current_symbol_table = symbol_table;
   yyparse();
+  print_symbol_table(symbol_table, 0);
+  free_symbol_table(symbol_table);
   if (!has_syntax_error) {
-    print_symbol_table(symbol_table, 0);
     printf("Syntax Tree\n");
     print_syntax_tree(syntax_tree, 0);
-    free_symbol_table(symbol_table);
     free_syntax_tree(syntax_tree);
   } else{
-    printf("Symbol table and syntax tree are not shown when a syntax error occurs\n");
+    printf("Syntax tree is not shown when a syntax error occurs\n");
   }
   yylex_destroy();
   return 0;
