@@ -877,6 +877,9 @@ static void print_grammar_rule(char* grammar_rule) {
 }
 
 int main() {
+  /*
+    This is a temporary list to store function in order to pass the whenever a new symbol table/scope is introduced
+  */
   func_params_list = NULL;
   /*
     We save a list of pointer to our AST nodes because when a syntax error occurs the
