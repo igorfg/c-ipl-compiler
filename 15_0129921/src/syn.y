@@ -420,7 +420,7 @@ expression-or-empty:
   }
 ;
 
-// 16
+// 17
 return-statement: 
   RETURN_KW SEMICOLON {
     print_grammar_rule("return-statement void\0");
@@ -435,7 +435,7 @@ return-statement:
   }
 ;
 
-// 17
+// 18
 input-statement: 
   READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON {
     print_grammar_rule("input-statement\0");
@@ -447,7 +447,7 @@ input-statement:
   }
 ;
 
-// 18
+// 19
 output-statement:
   write-call LPARENTHESES output-arg RPARENTHESES SEMICOLON {
     print_grammar_rule("output-statement simple-expression\0");
@@ -458,7 +458,7 @@ output-statement:
   }
 ;
 
-// 19
+// 20
 write-call:
   WRITE_KW {
     print_grammar_rule("write-call write\0");
@@ -470,7 +470,7 @@ write-call:
   }
 ;
 
-// 20
+// 21
 expression:
   ID ASSIGNMENT expression {
     print_grammar_rule("expression assigment\0");
@@ -488,7 +488,7 @@ expression:
   }
 ;
 
-// 21
+// 22
 simple-expression:
   logical-expression {
     print_grammar_rule("simple-expression logic-expression\0");
@@ -500,7 +500,7 @@ simple-expression:
   }
 ;
 
-// 22
+// 23
 logical-expression:
   logical-expression binary-logical-operator relational-expression {
     print_grammar_rule("logical-expression recursive\0");
@@ -517,7 +517,7 @@ logical-expression:
   }
 ;
 
-// 23
+// 24
 binary-logical-operator:
   AND_OP { 
     print_grammar_rule("binary-logical-operator AND\0");
@@ -529,7 +529,7 @@ binary-logical-operator:
   }
 ;
 
-// 24
+// 25
 relational-expression:
   relational-expression relational-operator math-expression {
     print_grammar_rule("relational-expression recursive\0");
@@ -546,7 +546,7 @@ relational-expression:
   }
 ;
 
-// 25
+// 26
 relational-operator:
   LESSTHAN_OP {
     print_grammar_rule("relational-operator LESSTHAN\0");
@@ -574,7 +574,7 @@ relational-operator:
   }
 ;
 
-// 26
+// 27
 list-expression:
   list-constructor {
     print_grammar_rule("list-expression list constructor\0");
@@ -594,7 +594,7 @@ list-expression:
   }
 ;
 
-// 27
+// 28
 math-expression:
   math-expression add-sub-operator term {
     print_grammar_rule("math-expression add-sub\0");
@@ -611,7 +611,7 @@ math-expression:
   }
 ;
 
-// 28
+// 29
 add-sub-operator:
   ADD_OP {
     print_grammar_rule("add-sub-operator ADD_OP\0");
@@ -623,7 +623,7 @@ add-sub-operator:
   }
 ;
 
-// 29
+// 30
 term:
   term mul-div-operator not-expression {
     print_grammar_rule("term mul-div\0");
@@ -640,7 +640,7 @@ term:
   }
 ;
 
-// 30
+// 31
 mul-div-operator:
   MULT_OP {
     print_grammar_rule("mul-div-operator mult\0");
@@ -652,7 +652,7 @@ mul-div-operator:
   }
 ;
 
-// 31
+// 32
 not-expression:
   NOT_OR_TAIL_OP not-expression {
     print_grammar_rule("not-expression recursive\0");
@@ -667,7 +667,7 @@ not-expression:
   };
 ;
 
-// 32
+// 33
 unary-sign-expression:
   add-sub-operator unary-sign-expression {
     print_grammar_rule("unary-sign-expression recursive\0");
@@ -682,7 +682,7 @@ unary-sign-expression:
   }
 ;
 
-// 32
+// 34
 factor: 
   LPARENTHESES expression RPARENTHESES {
     print_grammar_rule("factor expression\0");
@@ -715,7 +715,7 @@ factor:
   }
 ;
 
-// 33
+// 35
 func-call:
   ID LPARENTHESES args-list RPARENTHESES {
     print_grammar_rule("func-call\0");
@@ -729,7 +729,7 @@ func-call:
   }
 ;
 
-// 34
+// 36
 args-list:
   args {
     print_grammar_rule("args-list args\0");
@@ -741,7 +741,7 @@ args-list:
   }
 ;
 
-// 35
+// 37
 args:
   args COMMA expression {
     print_grammar_rule("args multiple args\0");
@@ -761,7 +761,7 @@ args:
   }
 ;
 
-// 36
+// 38
 list-constructor:
   list-constructor-expression LIST_CONSTRUCTOR_OP ID {
     print_grammar_rule("list-constructor\0");
@@ -775,7 +775,7 @@ list-constructor:
   }
 ;
 
-// 37
+// 39
 list-constructor-expression:
   list-constructor-expression LIST_CONSTRUCTOR_OP math-expression {
     print_grammar_rule("list-constructor-expression adding expression\0");
@@ -792,7 +792,7 @@ list-constructor-expression:
   }
 ;
 
-// 38
+// 40
 list-func:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func\0");
@@ -806,7 +806,7 @@ list-func:
   }
 ;
 
-// 39
+// 41
 list-func-expression:
   list-func-expression list-func-operator ID {
     print_grammar_rule("list-func-expression multiple");
@@ -825,7 +825,7 @@ list-func-expression:
   }
 ;
 
-// 40
+// 42
 list-func-operator:
   LIST_MAP_OP {
     print_grammar_rule("list-func-operator map");
@@ -837,7 +837,7 @@ list-func-operator:
   }
 ;
 
-// 41
+// 43
 numeric-const:
   FLOAT_CONST {
     print_grammar_rule("numeric-const unsgigned float const\0");
@@ -851,7 +851,7 @@ numeric-const:
   }
 ;
 
-// 42
+// 44
 output-arg:
   simple-expression {
     print_grammar_rule("output-arg simple-expression");
