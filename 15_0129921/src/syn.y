@@ -763,32 +763,32 @@ args:
 
 // 38
 list-constructor:
-  list-constructor-expression LIST_CONSTRUCTOR_OP ID {
+  logical-expression LIST_CONSTRUCTOR_OP list-constructor-expression {
     print_grammar_rule("list-constructor\0");
     $$ = initialize_node(":");
     node_t* list_constructor = $$;
-    node_t* list_constructor_expression = $1;
-    node_t* id = initialize_node($3);
+    node_t* logical_expression = $1;
+    node_t* list_constructor_expression = $3;
+    add_node(list_constructor, logical_expression);
     add_node(list_constructor, list_constructor_expression);
-    add_node(list_constructor, id);
-    free($3);
   }
 ;
 
 // 39
 list-constructor-expression:
-  list-constructor-expression LIST_CONSTRUCTOR_OP math-expression {
+  logical-expression LIST_CONSTRUCTOR_OP list-constructor-expression  {
     print_grammar_rule("list-constructor-expression adding expression\0");
     $$ = initialize_node(":");
     node_t* list_constructor_expression = $$;
-    node_t* recursive_list_constructor_expression = $1;
-    node_t* math_expression = $3;
+    node_t* logical_expression = $1;
+    node_t* recursive_list_constructor_expression = $3;
+    add_node(list_constructor_expression, logical_expression);
     add_node(list_constructor_expression, recursive_list_constructor_expression);
-    add_node(list_constructor_expression, math_expression);
   }
-  | math-expression {
+  | ID {
     print_grammar_rule("list-constructor-expression finished\0");
-    $$ = $1;
+    $$ = initialize_node($1);
+    free($1);
   }
 ;
 
