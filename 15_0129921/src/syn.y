@@ -794,29 +794,29 @@ list-constructor-expression:
 
 // 40
 list-func:
-  list-func-expression list-func-operator ID {
+  ID list-func-operator list-func-expression {
     print_grammar_rule("list-func\0");
     $$ = $2;
     node_t* list_func = $$;
-    node_t* list_func_expression = $1;
-    node_t* id = initialize_node($3);
-    add_node(list_func, list_func_expression);
+    node_t* id = initialize_node($1);
+    node_t* list_func_expression = $3;
     add_node(list_func, id);
-    free($3);
+    add_node(list_func, list_func_expression);
+    free($1);
   }
 ;
 
 // 41
 list-func-expression:
-  list-func-expression list-func-operator ID {
+  ID list-func-operator list-func-expression {
     print_grammar_rule("list-func-expression multiple");
     $$ = $2;
     node_t* list_func_expression = $$;
-    node_t* recursive_list_func_expression = $1;
-    node_t* id = initialize_node($3);
-    add_node(list_func_expression, recursive_list_func_expression);
+    node_t* id = initialize_node($1);
+    node_t* recursive_list_func_expression = $3;
     add_node(list_func_expression, id);
-    free($3);
+    add_node(list_func_expression, recursive_list_func_expression);
+    free($1);
   }
   | ID {
     print_grammar_rule("list-func-expression single id");
