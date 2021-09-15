@@ -10,12 +10,13 @@ symbol_table_t* initialize_symbol_table(int id) {
   return new_symbol_table;
 }
 
-void add_symbol_table_entry(symbol_table_t* symbol_table, char* id, char* data_type, int is_function) {
+void add_symbol_table_entry(symbol_table_t* symbol_table, char* id, char* data_type, int is_function, int params_count) {
   symbol_table_entry_t *new_symbol_table_entry = NULL;
   new_symbol_table_entry = (symbol_table_entry_t*)malloc(sizeof(symbol_table_entry_t));
   new_symbol_table_entry->id = strdup(id);
   new_symbol_table_entry->data_type = strdup(data_type);
   new_symbol_table_entry->is_function = is_function;
+  new_symbol_table_entry->params_count = params_count;
   DL_APPEND(symbol_table->entries, new_symbol_table_entry);
 }
 
@@ -36,24 +37,25 @@ void print_symbol_table(symbol_table_t* symbol_table, int indentation) {
   } else {
     printf("\n%*sSymbol Table: %d, Parent Table: None\n", indentation, "", symbol_table->scope_id);
   }
-  printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
+  printf("%*s----------------------------------------------------------------------------------------------\n", indentation, "");
 
   if (symbol_table->entries == NULL) {
-    printf("%*s|                                    EMPTY                                    |\n", indentation, "");
-    printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
+    printf("%*s|                                            EMPTY                                           |\n", indentation, "");
+    printf("%*s----------------------------------------------------------------------------------------------\n", indentation, "");
   } else {
-    printf("%*s| %-32s | %-12s | %-12s |\n", indentation, "", "Identifier", "Data / Return Type", "Function / Variable");
-    printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
+    printf("%*s| %-32s | %-12s | %-12s | %12s |\n", indentation, "", "Identifier", "Data / Return Type", "Function / Variable", "Params count"
+    );
+    printf("%*s----------------------------------------------------------------------------------------------\n", indentation, "");
 
     // Iterates through every symbol table entry
     symbol_table_entry_t * entry;
     DL_FOREACH(symbol_table->entries, entry) {
       if (entry->is_function) {
-        printf("%*s| %-32s | %-18s | %-19s |\n", indentation, "", entry->id, entry->data_type, "function");
+        printf("%*s| %-32s | %-18s | %-19s | %-12d |\n", indentation, "", entry->id, entry->data_type, "function", entry->params_count);
       } else {
-        printf("%*s| %-32s | %-18s | %-19s |\n", indentation, "", entry->id, entry->data_type, "var");
+        printf("%*s| %-32s | %-18s | %-19s | %-12s | \n", indentation, "", entry->id, entry->data_type, "var", "N/A");
       }
-      printf("%*s-------------------------------------------------------------------------------\n", indentation, "");
+      printf("%*s----------------------------------------------------------------------------------------------\n", indentation, "");
     }
   }
 
@@ -94,6 +96,7 @@ void save_func_param(char* id, char* data_type) {
   param->data_type = strdup(data_type);
   param->id = strdup(id);
   DL_APPEND(func_params_list, param);
+  func_params_count++;
 }
 
 void add_params_to_symbol_table(symbol_table_t* symbol_table) {
@@ -102,7 +105,7 @@ void add_params_to_symbol_table(symbol_table_t* symbol_table) {
     func_param_t* tmp;
 
     DL_FOREACH_SAFE(func_params_list, param, tmp) {
-      add_symbol_table_entry(symbol_table, param->id, param->data_type, 0);
+      add_symbol_table_entry(symbol_table, param->id, param->data_type, 0, -1);
       DL_DELETE(func_params_list, param);
       free(param->id);
       free(param->data_type);

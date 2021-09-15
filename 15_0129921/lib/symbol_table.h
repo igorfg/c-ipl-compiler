@@ -15,11 +15,10 @@ typedef struct func_param func_param_t;
 struct symbol_table_entry {
   char* id;
   char* data_type;
+  // var = 0; function = 1;
   int is_function;
-  union {
-    int32_t int_type;
-    float float_type;
-  };
+  // -1 for variables, otherwise its the number of parameters found in the function declaration
+  int params_count;
   symbol_table_entry_t* prev;
   symbol_table_entry_t* next;
 };
@@ -45,7 +44,7 @@ struct inner_scope {
 };
 
 symbol_table_t* initialize_symbol_table(int);
-void add_symbol_table_entry(symbol_table_t*, char*, char*, int);
+void add_symbol_table_entry(symbol_table_t*, char*, char*, int, int);
 void add_symbol_table_to_inner_scope(symbol_table_t*, symbol_table_t*);
 void print_symbol_table(symbol_table_t*, int);
 void free_symbol_table(symbol_table_t*);
@@ -56,5 +55,6 @@ void add_params_to_symbol_table(symbol_table_t*);
 symbol_table_t* symbol_table;
 symbol_table_t* current_symbol_table;
 func_param_t* func_params_list;
+int func_params_count;
 
 #endif

@@ -187,12 +187,12 @@ var-declaration:
     */
     if (yychar == LBRACE) {
       printf("lookahead %d\n", yychar);
-      add_symbol_table_entry(current_symbol_table->parent, id->name, data_type->name, 0);
+      add_symbol_table_entry(current_symbol_table->parent, id->name, data_type->name, 0, -1);
     } else if (yychar == RBRACE) {
-      add_symbol_table_entry(last_child, id->name, data_type->name, 0);
+      add_symbol_table_entry(last_child, id->name, data_type->name, 0, -1);
     }
     else {
-      add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0);
+      add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0, -1);
     }
     free($2);
   }
@@ -235,7 +235,8 @@ func-declaration:
       add_node(func_declaration, params_list);
     }
     add_node(func_declaration, block_statement);
-    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1);
+    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1, func_params_count);
+    func_params_count = 0;
     free($2);
   }
 ;
@@ -879,8 +880,11 @@ static void print_grammar_rule(char* grammar_rule) {
 int main() {
   /*
     This is a temporary list to store function in order to pass the whenever a new symbol table/scope is introduced
+    We also count the amount of parameters in the function declaration ir order to check it during function calls later
   */
   func_params_list = NULL;
+  func_params_count = 0;
+
   /*
     We save a list of pointer to our AST nodes because when a syntax error occurs the
     tree might not include all nodes and thus we lose some node references resulting in memory leaks
