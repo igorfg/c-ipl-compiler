@@ -9,5 +9,3 @@ int main() {
     #lex_error;
 
 }
-
-// if (a == a) {}
