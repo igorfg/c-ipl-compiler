@@ -17,6 +17,8 @@ static void print_token(char*, char*);
 
 int current_line = 1;
 int current_col = 1;
+int last_id_line = 1;
+int last_id_col = 1;
 int previous_col;
 int comment_block_line_begin;
 int symbol_table_scope = 0;
@@ -168,6 +170,8 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
   
   /* ID Definition */
 {ID}                        { 
+                              last_id_line = current_line;
+                              last_id_col = current_col;
                               update_position(1);
                               yylval.terminal_string = (char*) strdup(yytext);
                               print_token("ID\0", yytext);

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "symbol_table.h"
 #include "syntax_tree.h"
+#include "semantic_utils.h"
 
 // #define SYN_DEBUG_MODE
 
@@ -17,11 +18,14 @@ extern FILE* yyin;
 extern int yydestroy();
 extern int current_line;
 extern int previous_col;
+extern int last_id_line;
+extern int last_id_col;
 extern int symbol_table_scope;
 extern symbol_table_t* last_child;
 int has_syntax_error = 0;
 
 int yyerror(const char*);
+void semantic_error(int, int, char*);
 static void print_grammar_rule(char*);
 %}
 
@@ -179,6 +183,13 @@ var-declaration:
     add_node(var_declaration, data_type);
     add_node(var_declaration, id);
 
+    // Semantic
+    if (check_redeclared_id(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "variable id \"%s\" was declared previously", id->name);
+      semantic_error(last_id_line, last_id_col, error);
+    }
+
     /* 
       This is probably not a good solution but whenever the parser tries to find a match to a variable declaration is always looks ahead.
       In case the lookahead symbol is either a '{' or a '}' the symbol table context will be changed by the lexer for the parent or the last child, respectively.
@@ -235,6 +246,14 @@ func-declaration:
       add_node(func_declaration, params_list);
     }
     add_node(func_declaration, block_statement);
+
+    // Semantic
+    if (check_redeclared_id(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "function id \"%s\" was declared previously", id->name);
+      semantic_error(last_id_line, last_id_col, error);
+    }
+
     add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1, func_params_count);
     func_params_count = 0;
     free($2);
@@ -871,6 +890,10 @@ int yyerror(const char * e) {
   return 0;
 }
 
+void semantic_error(int line, int col, char* msg) {
+  printf("Semantic error at line %d col %d: %s\n", line, col, msg);
+}
+
 static void print_grammar_rule(char* grammar_rule) {
 #if defined SYN_DEBUG_MODE
   printf("Syn %s\n", grammar_rule);
@@ -879,7 +902,7 @@ static void print_grammar_rule(char* grammar_rule) {
 
 int main() {
   /*
-    This is a temporary list to store function in order to pass the whenever a new symbol table/scope is introduced
+    This is a temporary list to store function params in order to pass them whenever a new symbol table/scope is introduced
     We also count the amount of parameters in the function declaration ir order to check it during function calls later
   */
   func_params_list = NULL;
