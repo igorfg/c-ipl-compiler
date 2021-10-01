@@ -31,6 +31,11 @@ static void print_grammar_rule(char*);
 
 %union {
   char* terminal_string;
+  struct {
+    char* terminal_string;
+    int line;
+    int col;
+  } terminal_id;
   struct node* node;
 }
 
@@ -120,11 +125,15 @@ static void print_grammar_rule(char*);
 %token<terminal_string> READ_KW
 %token<terminal_string> WRITE_KW
 %token<terminal_string> WRITELN_KW
-%token<terminal_string> ID
+%token<terminal_id> ID
 
 %destructor {
   free($$);
-} ID INT_CONST FLOAT_CONST STRING_CONST
+} INT_CONST FLOAT_CONST STRING_CONST
+
+%destructor {
+  free($$.terminal_string);
+} ID
 
 // Solve ambiguity conflict
 %right RPARENTHESES ELSE_KW
@@ -179,7 +188,7 @@ var-declaration:
     $$ = initialize_node("var-declaration");
     node_t* var_declaration = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2);
+    node_t* id = initialize_node($2.terminal_string);
     add_node(var_declaration, data_type);
     add_node(var_declaration, id);
 
@@ -187,7 +196,7 @@ var-declaration:
     if (check_redeclared_id(current_symbol_table, id->name)) {
       char error[10000];
       sprintf(error, "variable id \"%s\" was declared previously", id->name);
-      semantic_error(last_id_line, last_id_col, error);
+      semantic_error($2.line, $2.col, error);
     }
 
     /* 
@@ -205,7 +214,7 @@ var-declaration:
     else {
       add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0, -1);
     }
-    free($2);
+    free($2.terminal_string);
   }
 ;
 
@@ -236,7 +245,7 @@ func-declaration:
     $$ = initialize_node("func-declaration");
     node_t* func_declaration = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2);
+    node_t* id = initialize_node($2.terminal_string);
     node_t* params_list = $4;
     node_t* block_statement = $6;
     add_node(func_declaration, data_type);
@@ -251,12 +260,12 @@ func-declaration:
     if (check_redeclared_id(current_symbol_table, id->name)) {
       char error[10000];
       sprintf(error, "function id \"%s\" was declared previously", id->name);
-      semantic_error(last_id_line, last_id_col, error);
+      semantic_error($2.line, $2.col, error);
     }
 
     add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1, func_params_count);
     func_params_count = 0;
-    free($2);
+    free($2.terminal_string);
   }
 ;
 
@@ -296,11 +305,17 @@ param:
     $$ = initialize_node("param");
     node_t* param = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2);
+    node_t* id = initialize_node($2.terminal_string);
     add_node(param, data_type);
     add_node(param, id);
+    // Semantic
+    if (check_redeclared_param(id->name)) {
+      char error[10000];
+      sprintf(error, "param id \"%s\" was declared previously", id->name);
+      semantic_error($2.line, $2.col, error);
+    }
     save_func_param(id->name, data_type->name);
-    free($2);
+    free($2.terminal_string);
   }
 ;
 
@@ -461,9 +476,16 @@ input-statement:
     print_grammar_rule("input-statement\0");
     $$ = initialize_node("read");
     node_t* input_statement = $$;
-    node_t* id = initialize_node($3);
+    node_t* id = initialize_node($3.terminal_string);
     add_node(input_statement, id);
-    free($3);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($3.line, $3.col, error);
+    }
+    free($3.terminal_string);
   }
 ;
 
@@ -496,11 +518,18 @@ expression:
     print_grammar_rule("expression assigment\0");
     $$ = initialize_node("=");
     node_t* expression = $$;
-    node_t* id = initialize_node($1);
+    node_t* id = initialize_node($1.terminal_string);
     node_t* recursive_expression = $3;
     add_node(expression, id);
     add_node(expression, recursive_expression);
-    free($1);
+    
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($1.line, $1.col, error);
+    }
+    free($1.terminal_string);
   }
   | simple-expression {
     print_grammar_rule("expression simple-expression\0");
@@ -608,9 +637,17 @@ list-expression:
     print_grammar_rule("list-expression list tail\0");
     $$ = initialize_node("%");
     node_t* list_expression = $$;
-    node_t* id = initialize_node($2);
+    node_t* id = initialize_node($2.terminal_string);
     add_node(list_expression, id);
-    free($2);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($2.line, $2.col, error);
+    }
+
+    free($2.terminal_string);
   }
 ;
 
@@ -720,14 +757,30 @@ factor:
     print_grammar_rule("factor list head\0");
     $$ = initialize_node("?");
     node_t* factor = $$;
-    node_t* id = initialize_node($2);
+    node_t* id = initialize_node($2.terminal_string);
     add_node(factor, id);
-    free($2);
+    
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($2.line, $2.col, error);
+    }
+
+    free($2.terminal_string);
   }
   | ID {
     print_grammar_rule("factor id\0");
-    $$ = initialize_node($1);
-    free($1);
+    $$ = initialize_node($1.terminal_string);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
   | LIST_CONST {
     print_grammar_rule("factor list const\0");
@@ -741,11 +794,19 @@ func-call:
     print_grammar_rule("func-call\0");
     $$ = initialize_node("func-call");
     node_t* func_call = $$;
-    node_t* id = initialize_node($1);
+    node_t* id = initialize_node($1.terminal_string);
     node_t* args_list = $3;
     add_node(func_call, id);
     add_node(func_call, args_list);
-    free($1);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
 ;
 
@@ -807,8 +868,16 @@ list-constructor-expression:
   }
   | ID {
     print_grammar_rule("list-constructor-expression finished\0");
-    $$ = initialize_node($1);
-    free($1);
+    $$ = initialize_node($1.terminal_string);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
 ;
 
@@ -818,11 +887,19 @@ list-func:
     print_grammar_rule("list-func\0");
     $$ = $2;
     node_t* list_func = $$;
-    node_t* id = initialize_node($1);
+    node_t* id = initialize_node($1.terminal_string);
     node_t* list_func_expression = $3;
     add_node(list_func, id);
     add_node(list_func, list_func_expression);
-    free($1);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
 ;
 
@@ -832,16 +909,32 @@ list-func-expression:
     print_grammar_rule("list-func-expression multiple");
     $$ = $2;
     node_t* list_func_expression = $$;
-    node_t* id = initialize_node($1);
+    node_t* id = initialize_node($1.terminal_string);
     node_t* recursive_list_func_expression = $3;
     add_node(list_func_expression, id);
     add_node(list_func_expression, recursive_list_func_expression);
-    free($1);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", id->name);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
   | ID {
     print_grammar_rule("list-func-expression single id");
-    $$ = initialize_node($1);
-    free($1);
+    $$ = initialize_node($1.terminal_string);
+
+    // Semantic
+    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
+      char error[10000];
+      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
+      semantic_error($1.line, $1.col, error);
+    }
+
+    free($1.terminal_string);
   }
 ;
 

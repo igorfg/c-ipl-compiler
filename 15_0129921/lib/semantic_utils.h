@@ -3,7 +3,8 @@
 #include "symbol_table.h"
 #include "syn.tab.h"
 
-int search_for_entry_in_symbol_table(symbol_table_t*, char*);
+int find_entry_in_symbol_table(symbol_table_t*, char*);
 int check_redeclared_id(symbol_table_t*, char*);
+int check_redeclared_param(char*);
 
 #endif
