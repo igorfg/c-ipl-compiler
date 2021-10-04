@@ -804,6 +804,10 @@ func-call:
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", id->name);
       semantic_error($1.line, $1.col, error);
+    } else if(!check_number_of_arguments(symbol_table, id->name, args_list)) {
+      char error[10000];
+      sprintf(error, "function call \"%s\" has the wrong number of arguments", id->name);
+      semantic_error($1.line, $1.col, error);
     }
 
     free($1.terminal_string);

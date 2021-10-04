@@ -4,8 +4,9 @@ int b;
 untyped_func_declaration() {}
 
 int main() {
-    int list c;
-    int spaced var;
+    float a;
+    int a;
+    undeclared_variable + 1;
     if if;
     ;;
 );
