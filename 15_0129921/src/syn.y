@@ -988,7 +988,7 @@ int yyerror(const char * e) {
 }
 
 void semantic_error(int line, int col, char* msg) {
-  printf("Semantic error at line %d col %d: %s\n", line, col, msg);
+  printf("semantic error at line %d col %d: %s\n", line, col, msg);
 }
 
 static void print_grammar_rule(char* grammar_rule) {
