@@ -2,7 +2,7 @@
 
 // This helper functions counts the number of arguments in a function call recursively
 int count_number_of_arguments(node_t* args_list) {  
-  if (args_list->node_list == NULL) {
+  if (args_list->node_list == NULL || strcmp(args_list->name, "args") != 0) {
     return 0;
   }
 
@@ -89,7 +89,7 @@ int check_number_of_arguments(symbol_table_t* symbol_table, char* id, node_t* ar
   int args_count = count_number_of_arguments(args_list);
 
   // Search for function declaration and get the number of params specified in the declaration
-  int params_count = 0;
+  int params_count = -1;
   symbol_table_entry_t * entry;
   DL_FOREACH(symbol_table->entries, entry) {
     if (strcmp(entry->id, id) == 0) {
