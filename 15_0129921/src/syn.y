@@ -45,6 +45,7 @@ static void print_grammar_rule(char*);
 %type<node> var-declaration
 %type<node> data-type
 %type<node> func-declaration
+%type<node> func-definition
 %type<node> params-list
 %type<node> params
 %type<node> param
@@ -206,7 +207,6 @@ var-declaration:
       https://www.gnu.org/software/bison/manual/html_node/Lookahead.html
     */
     if (yychar == LBRACE) {
-      printf("lookahead %d\n", yychar);
       add_symbol_table_entry(current_symbol_table->parent, id->name, data_type->name, 0, -1);
     } else if (yychar == RBRACE) {
       add_symbol_table_entry(last_child, id->name, data_type->name, 0, -1);
@@ -240,21 +240,32 @@ data-type:
 
 // 6
 func-declaration:
-  data-type ID LPARENTHESES params-list RPARENTHESES block-statement {
+  func-definition block-statement {
     print_grammar_rule("func-declaration\0");
     $$ = initialize_node("func-declaration");
     node_t* func_declaration = $$;
+    node_t* func_definition = $1;
+    node_t* block_statement = $2;
+    add_node(func_declaration, func_definition);
+    add_node(func_declaration, block_statement);
+  }
+;
+
+// 7
+func-definition:
+  data-type ID LPARENTHESES params-list RPARENTHESES {
+    print_grammar_rule("func-definition\0");
+    $$ = initialize_node("func-declaration");
+    node_t* func_definition = $$;
     node_t* data_type = $1;
     node_t* id = initialize_node($2.terminal_string);
     node_t* params_list = $4;
-    node_t* block_statement = $6;
-    add_node(func_declaration, data_type);
-    add_node(func_declaration, id);
+    add_node(func_definition, data_type);
+    add_node(func_definition, id);
     // Checks for empty params list
     if (params_list != NULL) {
-      add_node(func_declaration, params_list);
+      add_node(func_definition, params_list);
     }
-    add_node(func_declaration, block_statement);
 
     // Semantic
     if (check_redeclared_id(current_symbol_table, id->name)) {
@@ -262,9 +273,9 @@ func-declaration:
       sprintf(error, "function id \"%s\" was declared previously", id->name);
       semantic_error($2.line, $2.col, error);
     }
-
-    add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 1, func_params_count);
+    add_symbol_table_entry(symbol_table, id->name, data_type->name, 1, func_params_count);
     func_params_count = 0;
+
     free($2.terminal_string);
   }
 ;
@@ -798,6 +809,10 @@ func-call:
     node_t* args_list = $3;
     add_node(func_call, id);
     add_node(func_call, args_list);
+
+    // printf("**********\n");
+    // print_symbol_table(symbol_table, 0);
+    // printf("**********\n");
 
     // Semantic
     if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
