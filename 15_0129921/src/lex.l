@@ -70,8 +70,8 @@ UNIFINISHED_STRING_CONST ["]([^"\\\n]|\\(.|\n))*
   /* Data types are int, float elem and set */
 "int"                       { update_position(1); print_token("INT_TYPE\0", yytext); return INT_TYPE; }
 "float"                     { update_position(1); print_token("FLOAT_TYPE\0", yytext); return FLOAT_TYPE; }
-"int list"                  { update_position(1); print_token("INT_LIST_TYPE\0", yytext); return INT_LIST_TYPE; }
-"float list"                { update_position(1); print_token("FLOAT_LIST_TYPE\0", yytext); return FLOAT_LIST_TYPE; }
+"int"{WHITESPACE}"list"     { update_position(1); print_token("INT_LIST_TYPE\0", yytext); return INT_LIST_TYPE; }
+"float"{WHITESPACE}"list"   { update_position(1); print_token("FLOAT_LIST_TYPE\0", yytext); return FLOAT_LIST_TYPE; }
 
   /* Char os string constant with single or double quotes */
 
