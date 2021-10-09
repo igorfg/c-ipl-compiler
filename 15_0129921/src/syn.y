@@ -65,23 +65,20 @@ static void print_grammar_rule(char*);
 %type<node> logical-expression
 %type<node> relational-expression
 %type<node> relational-operator
-%type<node> binary-logical-operator
 %type<node> list-expression
+%type<node> binary-list-operator
+%type<node> binary-logical-operator
 %type<node> math-expression
 %type<node> add-sub-operator
 %type<node> term
 %type<node> mul-div-operator
 %type<node> not-expression
 %type<node> unary-sign-expression
+%type<node> unary-operator
 %type<node> factor
 %type<node> func-call
 %type<node> args-list
 %type<node> args
-%type<node> list-constructor
-%type<node> list-constructor-expression
-%type<node> list-func
-%type<node> list-func-expression
-%type<node> list-func-operator
 %type<node> numeric-const
 %type<node> output-arg
 
@@ -554,10 +551,6 @@ simple-expression:
     print_grammar_rule("simple-expression logic-expression\0");
     $$ = $1;
   }
-  | list-expression {
-    print_grammar_rule("simple-expression list-expression");
-    $$ = $1;
-  }
 ;
 
 // 23
@@ -591,17 +584,17 @@ binary-logical-operator:
 
 // 25
 relational-expression:
-  relational-expression relational-operator math-expression {
+  relational-expression relational-operator list-expression {
     print_grammar_rule("relational-expression recursive\0");
     $$ = $2;
     node_t* relational_expression = $$;
     node_t* recursive_relational_expression = $1;
-    node_t* math_expression = $3;
+    node_t* list_expression = $3;
     add_node(relational_expression, recursive_relational_expression);
-    add_node(relational_expression, math_expression);
+    add_node(relational_expression, list_expression);
   }
-  | math-expression {
-    print_grammar_rule("relational-expression math-expression\0");
+  | list-expression {
+    print_grammar_rule("relational-expression list-expression\0");
     $$ = $1;
   }
 ;
@@ -636,29 +629,33 @@ relational-operator:
 
 // 27
 list-expression:
-  list-constructor {
+  list-expression binary-list-operator math-expression {
     print_grammar_rule("list-expression list constructor\0");
-    $$ = $1;
-  }
-  | list-func {
-    print_grammar_rule("list-expression list func");
-    $$ = $1;
-  }
-  | LIST_TAIL_OP ID {
-    print_grammar_rule("list-expression list tail\0");
-    $$ = initialize_node("%");
+    $$ = $2;
     node_t* list_expression = $$;
-    node_t* id = initialize_node($2.terminal_string);
-    add_node(list_expression, id);
+    node_t* recursive_list_expression = $1;
+    node_t* math_expression = $3;
+    add_node(list_expression, recursive_list_expression);
+    add_node(list_expression, math_expression);
+  }
+  | math-expression {
+    $$ = $1;
+  }
+;
 
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($2.line, $2.col, error);
-    }
-
-    free($2.terminal_string);
+// 28
+binary-list-operator:
+  LIST_CONSTRUCTOR_OP {
+    print_grammar_rule("binary-list-operator LIST_CONSTRUCTOR_OP\0");
+    $$ = initialize_node(":");
+  }
+  | LIST_FILTER_OP {
+    print_grammar_rule("relational-operator LIST_FILTER_OP\0");
+    $$ = initialize_node("<<");
+  }
+  | LIST_MAP_OP {
+    print_grammar_rule("relational-operator LIST_MAP_OP\0");
+    $$ = initialize_node(">>");
   }
 ;
 
@@ -737,7 +734,7 @@ not-expression:
 
 // 33
 unary-sign-expression:
-  add-sub-operator unary-sign-expression {
+  unary-operator unary-sign-expression {
     print_grammar_rule("unary-sign-expression recursive\0");
     $$ = $1;
     node_t* unary_sign_expression = $$;
@@ -747,6 +744,21 @@ unary-sign-expression:
   | factor {
     print_grammar_rule("unary-sign-expression factor\0");
     $$ = $1;
+  }
+;
+
+unary-operator:
+  add-sub-operator {
+    print_grammar_rule("unary-operator add-sub-operator\0");
+    $$ = $1;
+  }
+  | LIST_HEAD_OP {
+    print_grammar_rule("unary-operator LIST_HEAD_OP\0");
+    $$ = initialize_node("?");
+  }
+  | LIST_TAIL_OP {
+    print_grammar_rule("unary-operator LIST_TAIL_OP\0");
+    $$ = initialize_node("%");
   }
 ;
 
@@ -763,22 +775,6 @@ factor:
   | numeric-const {
     print_grammar_rule("factor numeric-const\0");
     $$ = $1;
-  }
-  | LIST_HEAD_OP ID {
-    print_grammar_rule("factor list head\0");
-    $$ = initialize_node("?");
-    node_t* factor = $$;
-    node_t* id = initialize_node($2.terminal_string);
-    add_node(factor, id);
-    
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($2.line, $2.col, error);
-    }
-
-    free($2.terminal_string);
   }
   | ID {
     print_grammar_rule("factor id\0");
@@ -858,114 +854,6 @@ args:
     node_t* args = $$;
     node_t* expression = $1;
     add_node(args, expression);
-  }
-;
-
-// 38
-list-constructor:
-  logical-expression LIST_CONSTRUCTOR_OP list-constructor-expression {
-    print_grammar_rule("list-constructor\0");
-    $$ = initialize_node(":");
-    node_t* list_constructor = $$;
-    node_t* logical_expression = $1;
-    node_t* list_constructor_expression = $3;
-    add_node(list_constructor, logical_expression);
-    add_node(list_constructor, list_constructor_expression);
-  }
-;
-
-// 39
-list-constructor-expression:
-  logical-expression LIST_CONSTRUCTOR_OP list-constructor-expression  {
-    print_grammar_rule("list-constructor-expression adding expression\0");
-    $$ = initialize_node(":");
-    node_t* list_constructor_expression = $$;
-    node_t* logical_expression = $1;
-    node_t* recursive_list_constructor_expression = $3;
-    add_node(list_constructor_expression, logical_expression);
-    add_node(list_constructor_expression, recursive_list_constructor_expression);
-  }
-  | ID {
-    print_grammar_rule("list-constructor-expression finished\0");
-    $$ = initialize_node($1.terminal_string);
-
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
-      semantic_error($1.line, $1.col, error);
-    }
-
-    free($1.terminal_string);
-  }
-;
-
-// 40
-list-func:
-  ID list-func-operator list-func-expression {
-    print_grammar_rule("list-func\0");
-    $$ = $2;
-    node_t* list_func = $$;
-    node_t* id = initialize_node($1.terminal_string);
-    node_t* list_func_expression = $3;
-    add_node(list_func, id);
-    add_node(list_func, list_func_expression);
-
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($1.line, $1.col, error);
-    }
-
-    free($1.terminal_string);
-  }
-;
-
-// 41
-list-func-expression:
-  ID list-func-operator list-func-expression {
-    print_grammar_rule("list-func-expression multiple");
-    $$ = $2;
-    node_t* list_func_expression = $$;
-    node_t* id = initialize_node($1.terminal_string);
-    node_t* recursive_list_func_expression = $3;
-    add_node(list_func_expression, id);
-    add_node(list_func_expression, recursive_list_func_expression);
-
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($1.line, $1.col, error);
-    }
-
-    free($1.terminal_string);
-  }
-  | ID {
-    print_grammar_rule("list-func-expression single id");
-    $$ = initialize_node($1.terminal_string);
-
-    // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
-      semantic_error($1.line, $1.col, error);
-    }
-
-    free($1.terminal_string);
-  }
-;
-
-// 42
-list-func-operator:
-  LIST_MAP_OP {
-    print_grammar_rule("list-func-operator map");
-    $$ = initialize_node(">>");
-  }
-  | LIST_FILTER_OP {
-    print_grammar_rule("list-func-operator filter");
-    $$ = initialize_node("<<");
   }
 ;
 
