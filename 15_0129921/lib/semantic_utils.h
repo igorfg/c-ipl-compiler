@@ -11,4 +11,6 @@ int check_redeclared_param(char*);
 int check_number_of_arguments(symbol_table_t*, char*, node_t*);
 int check_unary_operation_type(node_t*);
 
+extern char* INT_TYPE_STR;
+
 #endif

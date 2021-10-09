@@ -24,9 +24,11 @@ void print_syntax_tree(node_t* node, int indent) {
   if (node->is_function == -1) {
     printf("%*s%s\n", indent, "", node->name);
   } else if (node->is_function == 0) {
-    printf("%*s%s [Type: %s]\n", indent, "", node->name, node->type);
+    printf("%*s%s", indent, "", node->name);
+    printf(GRN " [Type: %s]\n" RESET, node->type);
   } else {
-    printf("%*s%s [Type: Function][Return Type: %s]\n", indent, "", node->name, node->type);
+    printf("%*s%s", indent, "", node->name);
+    printf(GRN " [Type: Function][Return Type: %s]\n" RESET, node->type);
   }
 
   node_t* child;

@@ -1,5 +1,7 @@
 #ifndef SYNTAX_TREE_H_INCLUDED
 #define SYNTAX_TREE_H_INCLUDED
+#define GRN   "\x1B[32m"
+#define RESET "\x1B[0m"
 
 #include <stdlib.h>
 #include <string.h>

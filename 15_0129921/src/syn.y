@@ -22,9 +22,9 @@ extern int last_id_line;
 extern int last_id_col;
 extern int symbol_table_scope;
 extern symbol_table_t* last_child;
-char* int_type = "int\0";
-char* float_type = "float\0";
-char* list_type = "list\0";
+char* INT_TYPE_STR = "int\0";
+char* FLOAT_TYPE_STR = "float\0";
+char* LIST_TYPE_STR = "list\0";
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -728,6 +728,11 @@ not-expression:
     node_t* not_expression = $$;
     node_t* recursive_not_expression = $2;
     add_node(not_expression, recursive_not_expression);
+    if (!check_unary_operation_type($$)) {
+      char error[10000];
+      sprintf(error, "incompatible unary operator \"%s\" and operand \"%s\" ", "!", $2->name);
+      semantic_error(current_line, previous_col, error);
+    };
   }
   | unary-sign-expression {
     print_grammar_rule("not-expressional unary-sign-expression");
@@ -801,7 +806,7 @@ factor:
   | LIST_CONST {
     print_grammar_rule("factor list const\0");
     node_t * nil = initialize_node("NIL");
-    nil->type = list_type;
+    nil->type = LIST_TYPE_STR;
     nil->is_function = 0;
     $$ = nil;
   }
@@ -832,7 +837,10 @@ func-call:
       sprintf(error, "function call \"%s\" has the wrong number of arguments", id->name);
       semantic_error($1.line, $1.col, error);
     }
-
+    
+    // Function calls should be treated as var type
+    func_call->is_function = 0;
+    func_call->type = id->type;
     free($1.terminal_string);
   }
 ;
@@ -874,7 +882,7 @@ numeric-const:
   FLOAT_CONST {
     print_grammar_rule("numeric-const unsigned float const\0");
     node_t* numeric_const = initialize_node($1.terminal_string);
-    numeric_const->type = float_type;
+    numeric_const->type = FLOAT_TYPE_STR;
     numeric_const->is_function = 0;
     $$ = numeric_const;
     free($1.terminal_string);
@@ -882,7 +890,7 @@ numeric-const:
   | INT_CONST {
     print_grammar_rule("numeric-const unsigned int const\0");
     node_t* numeric_const = initialize_node($1.terminal_string);
-    numeric_const->type = int_type;
+    numeric_const->type = INT_TYPE_STR;
     numeric_const->is_function = 0;
     $$ = numeric_const;
     free($1.terminal_string);

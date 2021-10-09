@@ -63,24 +63,25 @@ int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* nod
   If the operand is a function it returns an error
 */
 int check_unary_operation_type(node_t* node) {
-  printf("node %s %s\n", node->name, node->type);
   node_t* head = node->node_list;
-  node->type = head->type;
   node->is_function = head->is_function;
-  printf("node %s %s\n", node->name, node->type);
-
-  // node_t* child;
-  // DL_FOREACH(node->node_list, child) {
-  //   node->type = child->type;
-  //   node->is_function = child->is_function;
-  // }
+  // When the the operator is for logical negation, the type is int since the values are either 0 or 1
+  if ((strcmp(node->name, "!") == 0) && (strcmp(head->type, "float") == 0 || strcmp(head->type, "int") == 0)) {
+    node->type = INT_TYPE_STR;
+  } else {
+    node->type = head->type;
+  }
 
   // Checks for invalid operation between function and unary operations
   if (node->is_function == 1) {
     return 0;
   }
+  // No operations can be applied no NIL type
+  if (strcmp(node->type, "list") == 0) {
+    return 0;
+  }
   // + - cannot be applied to lists
-  if ((strcmp(node->name, "+") == 0 || strcmp(node->name, "-") == 0) && (strcmp(node->type, "list") == 0 || strcmp(node->type, "int list") == 0 || strcmp(node->type, "float list") == 0)) {
+  if ((strcmp(node->name, "+") == 0 || strcmp(node->name, "-") == 0) && (strcmp(node->type, "int list") == 0 || strcmp(node->type, "float list") == 0)) {
     return 0;
   }
   // list operations cannot be applied to int or float
