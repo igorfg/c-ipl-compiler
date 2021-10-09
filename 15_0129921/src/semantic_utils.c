@@ -38,22 +38,56 @@ symbol_table_t* search_for_function_symbol_table(symbol_table_t* symbol_table, c
 }
 
 // This function searches for an entry in a symbol table. In case the entry is found it returns 1, otherwise it returns 0
-int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, char* id) {
+int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* node) {
   // In case there is no parent, it means the id being used was not found in the symbol table and false is returned
   if (current_symbol_table == NULL) {
     return 0;
   }
 
-  symbol_table_entry_t * entry;
+  symbol_table_entry_t* entry;
   DL_FOREACH(current_symbol_table->entries, entry) {
     // In case the id is found in one of the entries it means the scope is valid
-    if (strcmp(entry->id, id) == 0) {
+    if (strcmp(entry->id, node->name) == 0) {
+      node->type = entry->data_type;
+      node->is_function = entry->is_function;
       return 1;
     }
   }
 
   // If the id is not found in the current symbol table node, it tries searching for an entry in an upper scope
-  return find_entry_in_symbol_table(current_symbol_table->parent, id);
+  return find_entry_in_symbol_table(current_symbol_table->parent, node);
+}
+
+/*
+  This checks for the type in the first child of an unary operation and adds it to the unary operator node
+  If the operand is a function it returns an error
+*/
+int check_unary_operation_type(node_t* node) {
+  printf("node %s %s\n", node->name, node->type);
+  node_t* head = node->node_list;
+  node->type = head->type;
+  node->is_function = head->is_function;
+  printf("node %s %s\n", node->name, node->type);
+
+  // node_t* child;
+  // DL_FOREACH(node->node_list, child) {
+  //   node->type = child->type;
+  //   node->is_function = child->is_function;
+  // }
+
+  // Checks for invalid operation between function and unary operations
+  if (node->is_function == 1) {
+    return 0;
+  }
+  // + - cannot be applied to lists
+  if ((strcmp(node->name, "+") == 0 || strcmp(node->name, "-") == 0) && (strcmp(node->type, "list") == 0 || strcmp(node->type, "int list") == 0 || strcmp(node->type, "float list") == 0)) {
+    return 0;
+  }
+  // list operations cannot be applied to int or float
+  if ((strcmp(node->name, "?") == 0 || (strcmp(node->name, "%") == 0)) && (strcmp(node->type, "int") == 0 || strcmp(node->type, "float") == 0)) {
+    return 0;
+  }
+  return 1;
 }
 
 // This function searches for an id in a single symbol table, in case it finds an id in its entry, it returns 1, otherwise it returns 0

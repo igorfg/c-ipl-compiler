@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "symbol_table.h"
 #include "utlist.h"
 
 typedef struct node node_t;
@@ -15,6 +16,8 @@ struct node {
   node_t* prev;
   node_t* next;
   node_t* node_list;
+  char* type;
+  int is_function;
 };
 
 struct node_recovery {

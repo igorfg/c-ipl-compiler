@@ -9,6 +9,8 @@ node_t* initialize_node(char* name) {
   node_t* node = (node_t*)malloc(sizeof(node_t));
   node->node_list = NULL;
   node->name = strdup(name);
+  node->type = NULL;
+  node->is_function = -1;
   // printf("initialize_node %s\n", node->name);
   add_node_to_error_recovery_list(node);
   return node;
@@ -19,7 +21,13 @@ void print_syntax_tree(node_t* node, int indent) {
     return;
   }
 
-  printf("%*s%s\n", indent, "", node->name);
+  if (node->is_function == -1) {
+    printf("%*s%s\n", indent, "", node->name);
+  } else if (node->is_function == 0) {
+    printf("%*s%s [Type: %s]\n", indent, "", node->name, node->type);
+  } else {
+    printf("%*s%s [Type: Function][Return Type: %s]\n", indent, "", node->name, node->type);
+  }
 
   node_t* child;
   DL_FOREACH(node->node_list, child) {

@@ -5,9 +5,10 @@
 #include "syntax_tree.h"
 
 int count_number_of_arguments(node_t*);
-int find_entry_in_symbol_table(symbol_table_t*, char*);
+int find_entry_in_symbol_table(symbol_table_t*, node_t*);
 int check_redeclared_id(symbol_table_t*, char*);
 int check_redeclared_param(char*);
 int check_number_of_arguments(symbol_table_t*, char*, node_t*);
+int check_unary_operation_type(node_t*);
 
 #endif

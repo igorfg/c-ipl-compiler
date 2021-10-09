@@ -22,6 +22,9 @@ extern int last_id_line;
 extern int last_id_col;
 extern int symbol_table_scope;
 extern symbol_table_t* last_child;
+char* int_type = "int\0";
+char* float_type = "float\0";
+char* list_type = "list\0";
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -87,9 +90,9 @@ static void print_grammar_rule(char*);
 %token<terminal_string> FLOAT_TYPE
 %token<terminal_string> INT_LIST_TYPE
 %token<terminal_string> FLOAT_LIST_TYPE
-%token<terminal_string> INT_CONST
-%token<terminal_string> FLOAT_CONST
-%token<terminal_string> LIST_CONST
+%token<terminal_id> INT_CONST
+%token<terminal_id> FLOAT_CONST
+%token<terminal_id> LIST_CONST
 %token<terminal_string> STRING_CONST
 %token<terminal_string> ADD_OP
 %token<terminal_string> SUB_OP
@@ -127,11 +130,11 @@ static void print_grammar_rule(char*);
 
 %destructor {
   free($$);
-} INT_CONST FLOAT_CONST STRING_CONST
+} STRING_CONST
 
 %destructor {
   free($$.terminal_string);
-} ID
+} ID INT_CONST FLOAT_CONST
 
 // Solve ambiguity conflict
 %right RPARENTHESES ELSE_KW
@@ -488,7 +491,7 @@ input-statement:
     add_node(input_statement, id);
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", id->name);
       semantic_error($3.line, $3.col, error);
@@ -532,7 +535,7 @@ expression:
     add_node(expression, recursive_expression);
     
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", id->name);
       semantic_error($1.line, $1.col, error);
@@ -740,6 +743,11 @@ unary-sign-expression:
     node_t* unary_sign_expression = $$;
     node_t* recursive_unary_sign_expression = $2;
     add_node(unary_sign_expression, recursive_unary_sign_expression);
+    if (!check_unary_operation_type($$)) {
+      char error[10000];
+      sprintf(error, "incompatible unary operator \"%s\" and operand \"%s\" ", $1->name, $2->name);
+      semantic_error(current_line, previous_col, error);
+    };
   }
   | factor {
     print_grammar_rule("unary-sign-expression factor\0");
@@ -778,10 +786,11 @@ factor:
   }
   | ID {
     print_grammar_rule("factor id\0");
-    $$ = initialize_node($1.terminal_string);
+    node_t* id = initialize_node($1.terminal_string);
+    $$ = id;
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, $1.terminal_string)) {
+    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
       semantic_error($1.line, $1.col, error);
@@ -791,7 +800,10 @@ factor:
   }
   | LIST_CONST {
     print_grammar_rule("factor list const\0");
-    $$ = initialize_node("NIL");
+    node_t * nil = initialize_node("NIL");
+    nil->type = list_type;
+    nil->is_function = 0;
+    $$ = nil;
   }
 ;
 
@@ -811,7 +823,7 @@ func-call:
     // printf("**********\n");
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id->name)) {
+    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", id->name);
       semantic_error($1.line, $1.col, error);
@@ -860,14 +872,20 @@ args:
 // 43
 numeric-const:
   FLOAT_CONST {
-    print_grammar_rule("numeric-const unsgigned float const\0");
-    $$ = initialize_node($1);
-    free($1);
+    print_grammar_rule("numeric-const unsigned float const\0");
+    node_t* numeric_const = initialize_node($1.terminal_string);
+    numeric_const->type = float_type;
+    numeric_const->is_function = 0;
+    $$ = numeric_const;
+    free($1.terminal_string);
   }
   | INT_CONST {
     print_grammar_rule("numeric-const unsigned int const\0");
-    $$ = initialize_node($1);
-    free($1);
+    node_t* numeric_const = initialize_node($1.terminal_string);
+    numeric_const->type = int_type;
+    numeric_const->is_function = 0;
+    $$ = numeric_const;
+    free($1.terminal_string);
   }
 ;
 
