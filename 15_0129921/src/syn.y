@@ -32,7 +32,6 @@ char* FLOAT_TO_INT_STR = "convert_float_to_int\0";
 int has_syntax_error = 0;
 
 int yyerror(const char*);
-void semantic_error(int, int, char*);
 static void print_grammar_rule(char*);
 %}
 
@@ -198,12 +197,7 @@ var-declaration:
     add_node(var_declaration, id);
 
     // Semantic
-    if (check_redeclared_id(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "variable id \"%s\" was declared previously", id->name);
-      semantic_error($2.line, $2.col, error);
-    }
-
+    check_redeclared_id(current_symbol_table, $2.terminal_string, $2.line, $2.col);
     /* 
       This is probably not a good solution but whenever the parser tries to find a match to a variable declaration is always looks ahead.
       In case the lookahead symbol is either a '{' or a '}' the symbol table context will be changed by the lexer for the parent or the last child, respectively.
@@ -218,6 +212,7 @@ var-declaration:
     else {
       add_symbol_table_entry(current_symbol_table, id->name, data_type->name, 0, -1);
     }
+
     free($2.terminal_string);
   }
 ;
@@ -272,11 +267,7 @@ func-definition:
     }
 
     // Semantic
-    if (check_redeclared_id(current_symbol_table, id->name)) {
-      char error[10000];
-      sprintf(error, "function id \"%s\" was declared previously", id->name);
-      semantic_error($2.line, $2.col, error);
-    }
+    check_redeclared_id(symbol_table, $2.terminal_string, $2.line, $2.col);
     add_symbol_table_entry(symbol_table, id->name, data_type->name, 1, func_params_count);
     func_params_count = 0;
 
@@ -324,11 +315,7 @@ param:
     add_node(param, data_type);
     add_node(param, id);
     // Semantic
-    if (check_redeclared_param(id->name)) {
-      char error[10000];
-      sprintf(error, "param id \"%s\" was declared previously", id->name);
-      semantic_error($2.line, $2.col, error);
-    }
+    check_redeclared_param($2.terminal_string, $2.line, $2.col);
     save_func_param(id->name, data_type->name);
     free($2.terminal_string);
   }
@@ -491,11 +478,7 @@ input-statement:
     add_node(input_statement, id);
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($3.line, $3.col, error);
-    }
+    check_entry_in_symbol_table(current_symbol_table, id, $3.line, $3.col);
     free($3.terminal_string);
   }
 ;
@@ -535,11 +518,7 @@ expression:
     add_node(expression, recursive_expression);
     
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($1.line, $1.col, error);
-    } else {
+    if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
       check_binary_operation_type($$);
     }
     free($1.terminal_string);
@@ -745,11 +724,7 @@ not-expression:
     node_t* not_expression = $$;
     node_t* recursive_not_expression = $2;
     add_node(not_expression, recursive_not_expression);
-    if (!check_unary_operation_type($$)) {
-      char error[10000];
-      sprintf(error, "incompatible unary operator \"%s\" and operand \"%s\" ", "!", $2->name);
-      semantic_error(current_line, previous_col, error);
-    };
+    check_unary_operation_type($$);
   }
   | unary-sign-expression {
     print_grammar_rule("not-expression unary-sign-expression");
@@ -765,11 +740,7 @@ unary-sign-expression:
     node_t* unary_sign_expression = $$;
     node_t* recursive_unary_sign_expression = $2;
     add_node(unary_sign_expression, recursive_unary_sign_expression);
-    if (!check_unary_operation_type($$)) {
-      char error[10000];
-      sprintf(error, "incompatible unary operator \"%s\" and operand \"%s\" ", $1->name, $2->name);
-      semantic_error(current_line, previous_col, error);
-    };
+    check_unary_operation_type($$);
   }
   | factor {
     print_grammar_rule("unary-sign-expression factor\0");
@@ -812,12 +783,7 @@ factor:
     $$ = id;
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", $1.terminal_string);
-      semantic_error($1.line, $1.col, error);
-    }
-
+    check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col);
     free($1.terminal_string);
   }
   | LIST_CONST {
@@ -845,15 +811,9 @@ func-call:
     // printf("**********\n");
 
     // Semantic
-    if (!find_entry_in_symbol_table(current_symbol_table, id)) {
-      char error[10000];
-      sprintf(error, "id \"%s\" was not declared", id->name);
-      semantic_error($1.line, $1.col, error);
-    } else if(!check_number_of_arguments(symbol_table, id->name, args_list)) {
-      char error[10000];
-      sprintf(error, "function call \"%s\" has the wrong number of arguments", id->name);
-      semantic_error($1.line, $1.col, error);
-    }
+    if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
+      check_number_of_arguments(symbol_table, id->name, args_list, $1.line, $1.col);
+    } 
     
     // Function calls should be treated as var type
     func_call->is_function = 0;
@@ -931,10 +891,6 @@ output-arg:
 int yyerror(const char * e) {
   printf("%s at line %d col %d\n", e, current_line, previous_col);
   return 0;
-}
-
-void semantic_error(int line, int col, char* msg) {
-  printf("semantic error at line %d col %d: %s\n", line, col, msg);
 }
 
 static void print_grammar_rule(char* grammar_rule) {

@@ -1,5 +1,9 @@
 #include "semantic_utils.h"
 
+void print_semantic_error(char* msg, int line, int col) {
+  printf("semantic error at line %d col %d: %s\n", line, col, msg);
+}
+
 // This helper functions counts the number of arguments in a function call recursively
 int count_number_of_arguments(node_t* args_list) {  
   if (args_list->node_list == NULL || strcmp(args_list->name, "args") != 0) {
@@ -52,9 +56,10 @@ symbol_table_entry_t* get_function_argument(char* function_id, int position) {
 }
 
 // This function searches for an entry in a symbol table. In case the entry is found it returns 1, otherwise it returns 0
-int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* node) {
+int check_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* node, int line, int col) {
   // In case there is no parent, it means the id being used was not found in the symbol table and false is returned
   if (current_symbol_table == NULL) {
+    printf("semantic error at line %d col %d: id \"%s\" was not declared\n", line, col, node->name);
     return 0;
   }
 
@@ -69,7 +74,7 @@ int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* nod
   }
 
   // If the id is not found in the current symbol table node, it tries searching for an entry in an upper scope
-  return find_entry_in_symbol_table(current_symbol_table->parent, node);
+  return check_entry_in_symbol_table(current_symbol_table->parent, node, line, col);
 }
 
 /*
@@ -77,7 +82,7 @@ int find_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* nod
   If the operand is a function it returns an error
 */
 int check_unary_operation_type(node_t* operator) {
-  printf("->%s\n", operator->name);
+  // printf("unary %s\n", operator->name);
 
   node_t* operand = operator->node_list;
   if (operand->type == NULL) {
@@ -86,7 +91,9 @@ int check_unary_operation_type(node_t* operator) {
   operator->is_function = 0;
 
   // The operand cannot be a function id
-  if (operand->is_function == 1) {
+  if (operand->is_function) {
+    printf("semantic error at line %d col %d: operand %s has a function type\n", current_line, previous_col, operand->name);
+
     return 0;
   }
   // No unary operations can be applied to NIL type
@@ -160,8 +167,8 @@ int check_binary_operation_type(node_t* operator) {
     return 0;
   }
 
-  printf("binary %s %s %s\n", operand1->name, operator->name, operand2->name);
-  printf("binary %s %s %s\n", operand1->type, operator->type, operand2->type);
+  // printf("binary %s %s %s\n", operand1->name, operator->name, operand2->name);
+  // printf("binary %s %s %s\n", operand1->type, operator->type, operand2->type);
 
   // All binary operations return variables
   operator->is_function = 0;
@@ -451,35 +458,37 @@ int check_binary_operation_type(node_t* operator) {
   return 0;
 }
 
-// This function searches for an id in a single symbol table, in case it finds an id in its entry, it returns 1, otherwise it returns 0
-int check_redeclared_id(symbol_table_t* symbol_table, char* id) {
+// This function searches for an id in a single symbol table, in case it finds an id in its entry, it returns 0, otherwise it returns 1
+int check_redeclared_id(symbol_table_t* symbol_table, char* id, int line, int col) {
   symbol_table_entry_t * entry;
-  DL_FOREACH(current_symbol_table->entries, entry) {
+  DL_FOREACH(symbol_table->entries, entry) {
     // In case the id is found in one of the entries it means this variable or function was already declared previously in the same scope
     if (strcmp(entry->id, id) == 0) {
-      return 1;
+      printf("semantic error at line %d col %d: %s was previously defined\n", line, col, id);
+      return 0;
     }
   }
-  return 0;
+  return 1;
 }
 
-// This function searches for an id in the temp params list, in case it finds an id in the temp params list, it returns 1, otherwise it returns 0
-int check_redeclared_param(char* id) {
+// This function searches for an id in the temp params list, in case it finds an id in the temp params list, it returns 0, otherwise it returns 1
+int check_redeclared_param(char* id, int line, int col) {
   func_param_t * param;
   DL_FOREACH(func_params_list, param) {
     // In case the id is found in one of the params it means this param was already declared previously in the same function declaration
     if (strcmp(param->id, id) == 0) {
-      return 1;
+      printf("semantic error at line %d col %d: %s was previously defined\n", line, col, id);
+      return 0;
     }
   }
-  return 0;
+  return 1;
 }
 
 /*
   This functions checks in the global scope symbol table if the function declaration has the same number of arguments as 
   the function call. WARNING: This function expects that you have checked if the function was declared previously!
 */
-int check_number_of_arguments(symbol_table_t* symbol_table, char* id, node_t* args_list) {
+int check_number_of_arguments(symbol_table_t* symbol_table, char* id, node_t* args_list, int line, int col) {
   // Count number of args in function call
   int args_count = count_number_of_arguments(args_list);
 
@@ -495,6 +504,9 @@ int check_number_of_arguments(symbol_table_t* symbol_table, char* id, node_t* ar
   if (args_count == params_count) {
     return 1;
   }
+
+  printf("semantic error at line %d col %d: function call \"%s\" has the wrong number of arguments. Expected: %d, received: %d\n",
+         line, col, id, params_count, args_count);
   return 0;
 }
 

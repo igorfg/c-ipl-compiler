@@ -77,7 +77,6 @@ void add_node_between(node_t* parent, node_t* new_node, node_t* child, int posit
     if (count == position) {
       DL_REPLACE_ELEM(parent->node_list, elem, new_node);
       add_node(new_node, child);
-      printf("adicinou novo no %s %s\n", elem->name, new_node->name);
     }
     count++;
   }
