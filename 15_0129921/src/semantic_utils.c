@@ -4,6 +4,16 @@ void print_semantic_error(char* msg, int line, int col) {
   printf("semantic error at line %d col %d: %s\n", line, col, msg);
 }
 
+int retrieve_parameters_count(char* id) {
+  symbol_table_entry_t * entry;
+  DL_FOREACH(symbol_table->entries, entry) {
+    if (strcmp(entry->id, id) == 0) {
+      return entry->params_count;
+    }
+  }
+  return -1;
+}
+
 // This helper functions counts the number of arguments in a function call recursively
 int count_number_of_arguments(node_t* args_list) {  
   if (args_list->node_list == NULL || strcmp(args_list->name, "args") != 0) {
@@ -92,12 +102,12 @@ int check_unary_operation_type(node_t* operator) {
 
   // The operand cannot be a function id
   if (operand->is_function) {
-    printf("semantic error at line %d col %d: operand %s has a function type\n", current_line, previous_col, operand->name);
-
+    printf("semantic error at line %d col %d: undefined operation for %s and operand type function\n", current_line, previous_col, operator->name);
     return 0;
   }
   // No unary operations can be applied to NIL type
   if (strcmp(operand->type, LIST_TYPE_STR) == 0) {
+    printf("semantic error at line %d col %d: undefined operation for %s and operand type %s\n", current_line, previous_col, operator->name, operand->type);
     return 0;
   }
   // When the the operator is for logical negation, the type is int since the values are either 0 or 1
@@ -114,6 +124,7 @@ int check_unary_operation_type(node_t* operator) {
   if (strcmp(operator->name, "+") == 0 || strcmp(operator->name, "-") == 0) {
     // + - cannot be applied to lists
     if (strcmp(operand->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand->type, FLOAT_LIST_TYPE_STR) == 0) {
+      printf("semantic error at line %d col %d: undefined operation for %s and operand type %s\n", current_line, previous_col, operator->name, operand->type);
       return 0;
     }
     if (strcmp(operand->type, INT_TYPE_STR) == 0 || strcmp(operand->type, FLOAT_TYPE_STR) == 0) {
@@ -124,6 +135,7 @@ int check_unary_operation_type(node_t* operator) {
   if (strcmp(operator->name, "?") == 0 || strcmp(operator->name, "%") == 0) {
     // list operations cannot be applied to int or float
     if (strcmp(operand->type, INT_TYPE_STR) == 0 || strcmp(operand->type, FLOAT_TYPE_STR) == 0) {
+      printf("semantic error at line %d col %d: undefined operation for %s and operand type %s\n", current_line, previous_col, operator->name, operand->type);
       return 0;
     }
     if (strcmp(operator->name, "?") == 0) {
@@ -141,6 +153,7 @@ int check_unary_operation_type(node_t* operator) {
       return 1;
     }
   }
+  printf("semantic error at line %d col %d: undefined operation for %s and operand type %s\n", current_line, previous_col, operator->name, operand->type);
   return 0;
 }
 
@@ -177,11 +190,13 @@ int check_binary_operation_type(node_t* operator) {
   if (strcmp(operator->name, "=") == 0) {
     // Checks for invalid operation between function and binary operations
     if (operand1->is_function == 1 || operand2-> is_function == 1) {
+      printf("semantic error at line %d col %d: undefined binary operation function %s function\n", current_line, previous_col, operator->name);
       return 0;
     }
     // For NIL the right operand must receive the type of the left operand in case of int list or float list, otherwise it is undefined
     if (strcmp(operand2->type, LIST_TYPE_STR) == 0) {
       if (strcmp(operand1->type, INT_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_TYPE_STR) == 0) {
+        printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
         return 0;
       }
       if (strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0) {
@@ -195,6 +210,7 @@ int check_binary_operation_type(node_t* operator) {
     if (strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0) {
       // int list and float list can only be assigned to the same type
       if (strcmp(operand1->type, operand2->type) != 0) {
+        printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
         return 0;
       }
       // otherwise it has the same type of both operands
@@ -206,6 +222,7 @@ int check_binary_operation_type(node_t* operator) {
     if(strcmp(operand1->type, FLOAT_TYPE_STR) == 0 || strcmp(operand1->type, INT_TYPE_STR) == 0) {
       // In case it's not int or float, the operation is undefined
       if (strcmp(operand2->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand2->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(operand2->type, LIST_TYPE_STR) == 0) {
+        printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
         return 0;
       }
 
@@ -241,11 +258,14 @@ int check_binary_operation_type(node_t* operator) {
   if (strcmp(operator->name, "&&") == 0 || strcmp(operator->name, "||") == 0) {
     // Checks for invalid operation between function and binary operations
     if (operand1->is_function == 1 || operand2-> is_function == 1) {
+      printf("semantic error at line %d col %d: undefined binary operation function %s function\n", current_line, previous_col, operator->name);
       return 0;
     }
     // In case operands are invalid, it returns an error
     if (strcmp(operand1->type, LIST_TYPE_STR) == 0 || strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0 ||
         strcmp(operand2->type, LIST_TYPE_STR) == 0 || strcmp(operand2->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand2->type, FLOAT_LIST_TYPE_STR) == 0) {
+
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // If operands are float and integer, then the integer value must be converted to float
@@ -283,6 +303,7 @@ int check_binary_operation_type(node_t* operator) {
     operator->type = INT_LIST_TYPE_STR;
     // Checks for invalid operation between function and binary operations
     if (operand1->is_function == 1 || operand2-> is_function == 1) {
+      printf("semantic error at line %d col %d: undefined binary operation function %s function\n", current_line, previous_col, operator->name);
       return 0;
     }
 
@@ -292,23 +313,24 @@ int check_binary_operation_type(node_t* operator) {
         operand1->type = FLOAT_LIST_TYPE_STR;
       }
       else if (strcmp(operand2->type, INT_LIST_TYPE_STR) == 0) {
-        operand2->type = INT_LIST_TYPE_STR;
+        operand1->type = INT_LIST_TYPE_STR;
       }
     }
     // In case NIL is the second operand
     if (strcmp(operand2->type, LIST_TYPE_STR) == 0) {
       if (strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0) {
-        operand1->type = FLOAT_LIST_TYPE_STR;
+        operand2->type = FLOAT_LIST_TYPE_STR;
       }
       else if (strcmp(operand1->type, INT_LIST_TYPE_STR) == 0) {
-        operand1->type = INT_LIST_TYPE_STR;
+        operand2->type = INT_LIST_TYPE_STR;
       }
     }
 
     // When comparing two list types, they must be of the same type
-    if (strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0) {
-      if (strcmp(operand1->type, operand2->type) != 0) {
-        return 0;
+    if (strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0 ||
+        strcmp(operand2->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand2->type, FLOAT_LIST_TYPE_STR) == 0) {
+      if (strcmp(operand1->type, operand2->type) == 0) {
+        return 1;
       }
     }
 
@@ -343,11 +365,14 @@ int check_binary_operation_type(node_t* operator) {
   if (strcmp(operator->name, "+") == 0 || strcmp(operator->name, "-") == 0 || strcmp(operator->name, "*") == 0 || strcmp(operator->name, "/") == 0) {
     // Checks for invalid operation between function and binary operations
     if (operand1->is_function == 1 || operand2-> is_function == 1) {
+      printf("semantic error at line %d col %d: undefined binary operation function %s function\n", current_line, previous_col, operator->name);
       return 0;
     }
     // In case operands are invalid, it returns an error
     if (strcmp(operand1->type, LIST_TYPE_STR) == 0 || strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0 ||
         strcmp(operand2->type, LIST_TYPE_STR) == 0 || strcmp(operand2->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand2->type, FLOAT_LIST_TYPE_STR) == 0) {
+      
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // The following two cases add a conversion node in case operands are not of the same type
@@ -380,14 +405,17 @@ int check_binary_operation_type(node_t* operator) {
   else if (strcmp(operator->name, "<<") == 0 || strcmp(operator->name, ">>") == 0) {
     // The second operand must always be a int list type or float list type
     if (strcmp(operand2->type, FLOAT_LIST_TYPE_STR) != 0 && strcmp(operand2->type, INT_LIST_TYPE_STR) != 0) {
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // The first argument must always be a function type (not function call type). The function must be unary (single argument)
-    if (operand1->is_function != 1 && count_number_of_arguments(operand1) != 1) {
+    if (!operand1->is_function || retrieve_parameters_count(operand1->name) != 1) {
+      printf("semantic error at line %d col %d: \"%s\" operations require the first operand to be a unary function\n", current_line, previous_col, operator->name);
       return 0;
     }
     // The first argument must always be int or float since there are list of lists
     if (strcmp(operand1->type, FLOAT_TYPE_STR) != 0 && strcmp(operand1->type, INT_TYPE_STR) != 0) {
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // Filter must return the same type of the second operand
@@ -410,14 +438,17 @@ int check_binary_operation_type(node_t* operator) {
   else if (strcmp(operator->name, ":") == 0) {
     // Checks for invalid operation between function and binary operations
     if (operand1->is_function == 1 || operand2-> is_function == 1) {
+      printf("semantic error at line %d col %d: undefined binary operation function %s function\n", current_line, previous_col, operator->name);
       return 0;
     }
     // The second operand must always be a int list type or float list type or NIL
     if (strcmp(operand2->type, FLOAT_LIST_TYPE_STR) != 0 && strcmp(operand2->type, INT_LIST_TYPE_STR) != 0 && strcmp(operand2->type, LIST_TYPE_STR) != 0) {
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // The first operand must not be int list, float list or NIL
     if (strcmp(operand1->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, INT_LIST_TYPE_STR) == 0 || strcmp(operand1->type, LIST_TYPE_STR) == 0) {
+      printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
       return 0;
     }
     // When NIL is the second operand its type must be redefined as a list of the first operand's type
@@ -455,6 +486,7 @@ int check_binary_operation_type(node_t* operator) {
   }
 
   // Returns error if no previous match accepted
+  printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", current_line, previous_col, operand1->type, operator->name, operand2->type);
   return 0;
 }
 
@@ -488,18 +520,11 @@ int check_redeclared_param(char* id, int line, int col) {
   This functions checks in the global scope symbol table if the function declaration has the same number of arguments as 
   the function call. WARNING: This function expects that you have checked if the function was declared previously!
 */
-int check_number_of_arguments(symbol_table_t* symbol_table, char* id, node_t* args_list, int line, int col) {
+int check_number_of_arguments(char* id, node_t* args_list, int line, int col) {
   // Count number of args in function call
   int args_count = count_number_of_arguments(args_list);
-
   // Search for function declaration and get the number of params specified in the declaration
-  int params_count = -1;
-  symbol_table_entry_t * entry;
-  DL_FOREACH(symbol_table->entries, entry) {
-    if (strcmp(entry->id, id) == 0) {
-      params_count = entry->params_count;
-    }
-  }
+  int params_count = retrieve_parameters_count(id);
 
   if (args_count == params_count) {
     return 1;

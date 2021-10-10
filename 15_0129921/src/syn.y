@@ -24,7 +24,7 @@ extern int symbol_table_scope;
 extern symbol_table_t* last_child;
 char* INT_TYPE_STR = "int\0";
 char* FLOAT_TYPE_STR = "float\0";
-char* LIST_TYPE_STR = "list\0";
+char* LIST_TYPE_STR = "NIL\0";
 char* INT_LIST_TYPE_STR = "int list\0";
 char* FLOAT_LIST_TYPE_STR = "float list\0";
 char* INT_TO_FLOAT_STR = "convert_int_to_float\0";
@@ -812,7 +812,7 @@ func-call:
 
     // Semantic
     if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
-      check_number_of_arguments(symbol_table, id->name, args_list, $1.line, $1.col);
+      check_number_of_arguments(id->name, args_list, $1.line, $1.col);
     } 
     
     // Function calls should be treated as var type
