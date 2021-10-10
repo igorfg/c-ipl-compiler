@@ -34,6 +34,8 @@ void print_syntax_tree(node_t*, int);
 void free_syntax_tree(node_t*);
 void add_node_to_error_recovery_list(node_t*);
 void free_error_recovery_list();
+void add_node_between(node_t*, node_t*, node_t*, int);
+int check_main_declaration();
 
 node_t* syntax_tree;
 node_recovery_t* error_recovery_node_list;

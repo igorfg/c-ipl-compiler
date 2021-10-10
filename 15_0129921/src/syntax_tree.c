@@ -69,3 +69,16 @@ void free_error_recovery_list() {
     free(node_recovery);
   }
 }
+
+void add_node_between(node_t* parent, node_t* new_node, node_t* child, int position) {
+  int count = 0;
+  node_t* elem;
+  DL_FOREACH(parent->node_list, elem) {
+    if (count == position) {
+      DL_REPLACE_ELEM(parent->node_list, elem, new_node);
+      add_node(new_node, child);
+      printf("adicinou novo no %s %s\n", elem->name, new_node->name);
+    }
+    count++;
+  }
+}

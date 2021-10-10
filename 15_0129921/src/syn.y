@@ -25,6 +25,10 @@ extern symbol_table_t* last_child;
 char* INT_TYPE_STR = "int\0";
 char* FLOAT_TYPE_STR = "float\0";
 char* LIST_TYPE_STR = "list\0";
+char* INT_LIST_TYPE_STR = "int list\0";
+char* FLOAT_LIST_TYPE_STR = "float list\0";
+char* INT_TO_FLOAT_STR = "convert_int_to_float\0";
+char* FLOAT_TO_INT_STR = "convert_float_to_int\0";
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -468,11 +472,7 @@ expression-or-empty:
 
 // 17
 return-statement: 
-  RETURN_KW SEMICOLON {
-    print_grammar_rule("return-statement void\0");
-    $$ = initialize_node("void-return");
-  }
-  | RETURN_KW expression SEMICOLON {
+  RETURN_KW expression SEMICOLON {
     print_grammar_rule("return-statement expression\0");
     $$ = initialize_node("return");
     node_t* return_statement = $$;
@@ -539,6 +539,8 @@ expression:
       char error[10000];
       sprintf(error, "id \"%s\" was not declared", id->name);
       semantic_error($1.line, $1.col, error);
+    } else {
+      check_binary_operation_type($$);
     }
     free($1.terminal_string);
   }
@@ -566,6 +568,9 @@ logical-expression:
     node_t* relational_expression = $3;
     add_node(logical_expression, recursive_logical_expression);
     add_node(logical_expression, relational_expression);
+
+    // Semantic
+    check_binary_operation_type($$);
   }
   | relational-expression {
     print_grammar_rule("logical-expression relational-expression\0");
@@ -595,6 +600,9 @@ relational-expression:
     node_t* list_expression = $3;
     add_node(relational_expression, recursive_relational_expression);
     add_node(relational_expression, list_expression);
+
+    // Semantic
+    check_binary_operation_type($$);
   }
   | list-expression {
     print_grammar_rule("relational-expression list-expression\0");
@@ -632,14 +640,17 @@ relational-operator:
 
 // 27
 list-expression:
-  list-expression binary-list-operator math-expression {
+  math-expression binary-list-operator list-expression {
     print_grammar_rule("list-expression list constructor\0");
     $$ = $2;
     node_t* list_expression = $$;
-    node_t* recursive_list_expression = $1;
-    node_t* math_expression = $3;
-    add_node(list_expression, recursive_list_expression);
+    node_t* math_expression = $1;
+    node_t* recursive_list_expression = $3;
     add_node(list_expression, math_expression);
+    add_node(list_expression, recursive_list_expression);
+
+    // Semantic
+    check_binary_operation_type($$);
   }
   | math-expression {
     $$ = $1;
@@ -672,6 +683,9 @@ math-expression:
     node_t* term = $3;
     add_node(math_expression, recursive_math_expression);
     add_node(math_expression, term);
+
+    // Semantic
+    check_binary_operation_type($$);
   }
   | term {
     print_grammar_rule("math-expression term\0");
@@ -701,6 +715,9 @@ term:
     node_t* not_expression = $3;
     add_node(term, recursive_term);
     add_node(term, not_expression);
+    
+    // Semantic
+    check_binary_operation_type($$);
   }
   | not-expression {
     print_grammar_rule("term factor\0");
@@ -735,7 +752,7 @@ not-expression:
     };
   }
   | unary-sign-expression {
-    print_grammar_rule("not-expressional unary-sign-expression");
+    print_grammar_rule("not-expression unary-sign-expression");
     $$ = $1;
   };
 ;
@@ -948,6 +965,8 @@ int main() {
 
   // Initialize parsing
   yyparse();
+  // Check if main was declared
+  check_main_declaration();
   print_symbol_table(symbol_table, 0);
   if (!has_syntax_error) {
     printf("Syntax Tree\n");
@@ -955,6 +974,7 @@ int main() {
   } else{
     printf("Syntax tree is not shown when a syntax error occurs\n");
   }
+
 
   // Free Symbol Table
   free_symbol_table(symbol_table);
