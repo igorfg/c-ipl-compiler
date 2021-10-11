@@ -29,6 +29,7 @@ char* INT_LIST_TYPE_STR = "int list\0";
 char* FLOAT_LIST_TYPE_STR = "float list\0";
 char* INT_TO_FLOAT_STR = "convert_int_to_float\0";
 char* FLOAT_TO_INT_STR = "convert_float_to_int\0";
+char* STRING_LITERAL = "string\0";
 int has_syntax_error = 0;
 
 int yyerror(const char*);
@@ -481,7 +482,9 @@ input-statement:
     add_node(input_statement, id);
 
     // Semantic
-    check_entry_in_symbol_table(current_symbol_table, id, $3.line, $3.col);
+    if (check_entry_in_symbol_table(current_symbol_table, id, $3.line, $3.col)) {
+      check_read_type(id);
+    }
     free($3.terminal_string);
   }
 ;
@@ -494,6 +497,7 @@ output-statement:
     node_t* output_statement = $$;
     node_t* output_arg = $3;
     add_node(output_statement, output_arg);
+    check_write_type(output_arg);
   }
 ;
 
@@ -890,6 +894,8 @@ output-arg:
   | STRING_CONST {
     print_grammar_rule("output-arg string const");
     $$ = initialize_node($1);
+    $$->type = STRING_LITERAL;
+    $$->is_function = 0;
     free($1);
   }
 ;

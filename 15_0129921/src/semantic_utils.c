@@ -582,6 +582,10 @@ int check_params_recursively(node_t* id, node_t* args_list, int params_count, in
   if (arg->type == NULL) {
     return 0;
   }
+  if (arg->is_function) {
+    printf("semantic error at line %d col %d: argument %s is a function\n", current_line, previous_col, arg->name);
+    success = 0;
+  }
 
   // If the param type is integer or float, it cannot be assigned to list types and we need to convert the type to int or float
   if (strcmp(param->data_type, INT_TYPE_STR) == 0 || strcmp(param->data_type, FLOAT_TYPE_STR) == 0) {
@@ -644,6 +648,10 @@ int check_return_type(node_t* return_node, node_t* expression) {
   if (expression->type == NULL) {
     return 0;
   }
+  if (expression->is_function) {
+    printf("semantic error at line %d col %d: return type is a function %s\n", current_line, previous_col, expression->name);
+    return 0;
+  }
 
   // If the return type is integer or float, it cannot be assigned to list types and we need to convert the type to int or float
   if (strcmp(return_node->type, INT_TYPE_STR) == 0 || strcmp(return_node->type, FLOAT_TYPE_STR) == 0) {
@@ -678,5 +686,36 @@ int check_return_type(node_t* return_node, node_t* expression) {
     }
   }
   
+  return 1;
+}
+
+int check_read_type(node_t* id) {
+  if(id->type == NULL) {
+    return 0;
+  }
+  if (id->is_function) {
+    printf("semantic error at line %d col %d: %s is a function\n", current_line, previous_col, id->name);
+    return 0;
+  }
+
+  if (strcmp(id->type, INT_LIST_TYPE_STR) == 0 || strcmp(id->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(id->type, LIST_TYPE_STR) == 0) {
+    printf("semantic error at line %d col %d: read id must be a primitive type\n", current_line, previous_col);
+    return 0;
+  }
+  return 1;
+}
+
+int check_write_type(node_t* expression) {
+  if (expression->type == NULL) {
+    return 0;
+  }
+  if (expression->is_function) {
+    printf("semantic error at line %d col %d: %s is a function\n", current_line, previous_col, expression->name);
+    return 0;
+  }
+  if (strcmp(expression->type, INT_LIST_TYPE_STR) == 0 || strcmp(expression->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(expression->type, LIST_TYPE_STR) == 0) {
+    printf("semantic error at line %d col %d: write expression must be a primitive type or string literal\n", current_line, previous_col);
+    return 0;
+  }
   return 1;
 }

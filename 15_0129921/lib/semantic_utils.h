@@ -13,6 +13,8 @@ int check_unary_operation_type(node_t*);
 int check_binary_operation_type(node_t*);
 int check_param_types(node_t*, node_t*);
 int check_return_type(node_t*, node_t*);
+int check_read_type(node_t*);
+int check_write_type(node_t*);
 
 
 extern char* INT_TYPE_STR;
@@ -22,6 +24,7 @@ extern char* INT_LIST_TYPE_STR;
 extern char* FLOAT_LIST_TYPE_STR;
 extern char* INT_TO_FLOAT_STR;
 extern char* FLOAT_TO_INT_STR;
+extern char* STRING_LITERAL;
 extern int current_line;
 extern int previous_col;
 
