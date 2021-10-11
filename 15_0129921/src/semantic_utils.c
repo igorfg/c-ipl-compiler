@@ -95,6 +95,7 @@ int check_unary_operation_type(node_t* operator) {
   // printf("unary %s\n", operator->name);
 
   node_t* operand = operator->node_list;
+  // In case of undefined operand, halt analysis
   if (operand->type == NULL) {
     return 0;
   }
@@ -176,6 +177,8 @@ int check_binary_operation_type(node_t* operator) {
     }
     count++;
   }
+
+  // In case of undefined operands, halt analysis
   if (operand1->type == NULL || operand2->type == NULL) {
     return 0;
   }
@@ -575,6 +578,11 @@ int check_params_recursively(node_t* id, node_t* args_list, int params_count, in
     count++;
   }
 
+  // If expression is undefined it mean a previous error occured and we halt analysis
+  if (arg->type == NULL) {
+    return 0;
+  }
+
   // If the param type is integer or float, it cannot be assigned to list types and we need to convert the type to int or float
   if (strcmp(param->data_type, INT_TYPE_STR) == 0 || strcmp(param->data_type, FLOAT_TYPE_STR) == 0) {
     if (strcmp(arg->type, INT_LIST_TYPE_STR) == 0 || strcmp(arg->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(arg->type, LIST_TYPE_STR) == 0) {
@@ -614,4 +622,61 @@ int check_params_recursively(node_t* id, node_t* args_list, int params_count, in
 int check_param_types(node_t* id, node_t* args_list) {
   int params_count = retrieve_parameters_count(id->name);
   return check_params_recursively(id, args_list, params_count, 0, 1);
+}
+
+char* get_return_type() {
+  symbol_table_entry_t * entry;
+  DL_FOREACH(symbol_table->entries, entry) {
+    if (entry->next == NULL) {
+      return entry->data_type;
+    }
+  }
+  return NULL;
+}
+
+int check_return_type(node_t* return_node, node_t* expression) {
+  // Get function type
+  char* return_type = get_return_type();
+  return_node->type = return_type;
+  return_node->is_function = 0;
+
+  // If expression is undefined it mean a previous error occured and we halt analysis
+  if (expression->type == NULL) {
+    return 0;
+  }
+
+  // If the return type is integer or float, it cannot be assigned to list types and we need to convert the type to int or float
+  if (strcmp(return_node->type, INT_TYPE_STR) == 0 || strcmp(return_node->type, FLOAT_TYPE_STR) == 0) {
+    if (strcmp(expression->type, INT_LIST_TYPE_STR) == 0 || strcmp(expression->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(expression->type, LIST_TYPE_STR) == 0) {
+      printf("semantic error at line %d col %d: expression has type %s but return type is %s\n",
+              current_line, previous_col, expression->type, return_node->type);
+      return 0;
+    }
+    if (strcmp(return_node->type, FLOAT_TYPE_STR) == 0 && strcmp(expression->type, INT_TYPE_STR) == 0) {
+      node_t* conversion_node = initialize_node(INT_TO_FLOAT_STR);
+      conversion_node->type = FLOAT_TYPE_STR;
+      conversion_node->is_function = 0;
+      add_node_between(return_node, conversion_node, expression, 0);
+    }
+    else if (strcmp(return_node->type, INT_TYPE_STR) == 0 && strcmp(expression->type, FLOAT_TYPE_STR) == 0) {
+      node_t* conversion_node = initialize_node(FLOAT_TO_INT_STR);
+      conversion_node->type = INT_TYPE_STR;
+      conversion_node->is_function = 0;
+      add_node_between(return_node, conversion_node, expression, 0);
+    }
+  }
+
+  // If the return type is float list or int list it must convert NIL type to its type and must not accept a type diferent from its own
+  if (strcmp(return_node->type, INT_LIST_TYPE_STR) == 0 || strcmp(return_node->type, FLOAT_LIST_TYPE_STR) == 0) {
+    if (strcmp(expression->type, LIST_TYPE_STR) == 0) {
+      expression->type = return_node->type;
+    }
+    else if (strcmp(return_node->type, expression->type) != 0) {
+      printf("semantic error at line %d col %d: expression has type %s but return type is %s\n",
+              current_line, previous_col, expression->type, return_node->type);
+      return 0;
+    }
+  }
+  
+  return 1;
 }

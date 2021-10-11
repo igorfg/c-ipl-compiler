@@ -465,6 +465,9 @@ return-statement:
     node_t* return_statement = $$;
     node_t* expression = $2;
     add_node(return_statement, expression);
+
+    //Semantic
+    check_return_type(return_statement, expression);
   }
 ;
 

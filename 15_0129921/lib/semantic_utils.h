@@ -12,6 +12,8 @@ int check_number_of_arguments(node_t*, node_t*, int, int);
 int check_unary_operation_type(node_t*);
 int check_binary_operation_type(node_t*);
 int check_param_types(node_t*, node_t*);
+int check_return_type(node_t*, node_t*);
+
 
 extern char* INT_TYPE_STR;
 extern char* FLOAT_TYPE_STR;
