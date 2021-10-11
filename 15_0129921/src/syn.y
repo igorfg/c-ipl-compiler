@@ -812,7 +812,9 @@ func-call:
 
     // Semantic
     if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
-      check_number_of_arguments(id->name, args_list, $1.line, $1.col);
+      if(check_number_of_arguments(id, args_list, $1.line, $1.col)) {
+        check_param_types(id, args_list);
+      }
     } 
     
     // Function calls should be treated as var type
@@ -849,7 +851,9 @@ args:
     print_grammar_rule("args expression\0");
     $$ = initialize_node("args");
     node_t* args = $$;
+    node_t* dummy_args = initialize_node("args");
     node_t* expression = $1;
+    add_node(args, dummy_args);
     add_node(args, expression);
   }
 ;

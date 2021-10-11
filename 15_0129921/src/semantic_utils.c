@@ -520,18 +520,24 @@ int check_redeclared_param(char* id, int line, int col) {
   This functions checks in the global scope symbol table if the function declaration has the same number of arguments as 
   the function call. WARNING: This function expects that you have checked if the function was declared previously!
 */
-int check_number_of_arguments(char* id, node_t* args_list, int line, int col) {
+int check_number_of_arguments(node_t* id, node_t* args_list, int line, int col) {
+  // If given id is not from a function, returns an error
+  if (!id->is_function) {
+    printf("semantic error at line %d col %d: %s is not a function\n", line, col, id->name);
+    return 0;
+  }
+  
   // Count number of args in function call
   int args_count = count_number_of_arguments(args_list);
   // Search for function declaration and get the number of params specified in the declaration
-  int params_count = retrieve_parameters_count(id);
+  int params_count = retrieve_parameters_count(id->name);
 
   if (args_count == params_count) {
     return 1;
   }
 
   printf("semantic error at line %d col %d: function call \"%s\" has the wrong number of arguments. Expected: %d, received: %d\n",
-         line, col, id, params_count, args_count);
+         line, col, id->name, params_count, args_count);
   return 0;
 }
 
@@ -549,21 +555,63 @@ int check_main_declaration() {
   return 0;
 }
 
-// int compare_arg_types_to_entry_types(char* data_type, node_t* args_list, int depth) {
+int check_params_recursively(node_t* id, node_t* args_list, int params_count, int depth, int success) {
+  // If node depth is the same as the params count it means we have checked all params
+  if (depth == params_count) {
+    return success;
+  }
 
-// }
+  symbol_table_entry_t* param = get_function_argument(id->name, params_count - (depth+1));
+  node_t* arg;
+  node_t* next_args_list;
+  int count = 0;
+  node_t* child;
+  DL_FOREACH(args_list->node_list, child) {
+    if (count == 0) {
+      next_args_list = child;
+    } else {
+      arg = child;
+    }
+    count++;
+  }
 
-// int check_type_of_arguments(symbol_table_t* symbol_table, char* id, node_t* args_list) {
-//   int params_count;
-//   symbol_table_t* function_symbol_table = search_for_function_symbol_table(symbol_table, id, &params_count);
+  // If the param type is integer or float, it cannot be assigned to list types and we need to convert the type to int or float
+  if (strcmp(param->data_type, INT_TYPE_STR) == 0 || strcmp(param->data_type, FLOAT_TYPE_STR) == 0) {
+    if (strcmp(arg->type, INT_LIST_TYPE_STR) == 0 || strcmp(arg->type, FLOAT_LIST_TYPE_STR) == 0 || strcmp(arg->type, LIST_TYPE_STR) == 0) {
+      printf("semantic error at line %d col %d: %s has type %s but type %s was expected\n",
+              current_line, previous_col, arg->name, arg->type, param->data_type);
+      success = 0;
+    }
+    if (strcmp(param->data_type, FLOAT_TYPE_STR) == 0 && strcmp(arg->type, INT_TYPE_STR) == 0) {
+      node_t* conversion_node = initialize_node(INT_TO_FLOAT_STR);
+      conversion_node->type = FLOAT_TYPE_STR;
+      conversion_node->is_function = 0;
+      add_node_between(args_list, conversion_node, arg, 1);
+    }
+    else if (strcmp(param->data_type, INT_TYPE_STR) == 0 && strcmp(arg->type, FLOAT_TYPE_STR) == 0) {
+      node_t* conversion_node = initialize_node(FLOAT_TO_INT_STR);
+      conversion_node->type = INT_TYPE_STR;
+      conversion_node->is_function = 0;
+      add_node_between(args_list, conversion_node, arg, 1);
+    }
+  }
 
-//   int depth = 0;
-//   symbol_table_entry_t* entry;
-//   DL_FOREACH(symbol_table->entries, entry) {
-//     if (depth < params_count) {
-//       compare_arg_types_to_entry_types(entry->data_type, args_list, depth);
-//     }
-//     depth++;
-//   }
-//   return compare_arg_types_to_entry_types(function_symbol_table, args_list);
-// }
+  // If the param type is float list or int list it must convert NIL type to its type and must not accept a type diferent from its own
+  if (strcmp(param->data_type, INT_LIST_TYPE_STR) == 0 || strcmp(param->data_type, FLOAT_LIST_TYPE_STR) == 0) {
+    if (strcmp(arg->type, LIST_TYPE_STR) == 0) {
+      arg->type = param->data_type;
+    }
+    else if (strcmp(param->data_type, arg->type) != 0) {
+      printf("semantic error at line %d col %d: %s has type %s but type %s was expected\n",
+              current_line, previous_col, arg->name, arg->type, param->data_type);
+      success = 0;
+    }
+  }
+  return check_params_recursively(id, next_args_list, params_count, depth+1, success);
+}
+
+// This function checks for params recursively
+int check_param_types(node_t* id, node_t* args_list) {
+  int params_count = retrieve_parameters_count(id->name);
+  return check_params_recursively(id, args_list, params_count, 0, 1);
+}
