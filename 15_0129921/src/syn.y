@@ -97,48 +97,44 @@ static void print_grammar_rule(char*);
 %token<terminal_id> INT_CONST
 %token<terminal_id> FLOAT_CONST
 %token<terminal_id> LIST_CONST
-%token<terminal_string> STRING_CONST
-%token<terminal_string> ADD_OP
-%token<terminal_string> SUB_OP
-%token<terminal_string> MULT_OP
-%token<terminal_string> DIV_OP
-%token<terminal_string> NOT_OR_TAIL_OP
-%token<terminal_string> OR_OP
-%token<terminal_string> AND_OP
-%token<terminal_string> LIST_HEAD_OP
-%token<terminal_string> LIST_TAIL_OP
-%token<terminal_string> LIST_CONSTRUCTOR_OP
-%token<terminal_string> LIST_MAP_OP
-%token<terminal_string> LIST_FILTER_OP
-%token<terminal_string> LESSTHAN_OP
-%token<terminal_string> LESSEQUAL_OP
-%token<terminal_string> GREATERTHAN_OP
-%token<terminal_string> GREATEREQUAL_OP
-%token<terminal_string> NOTEQUAL_OP
-%token<terminal_string> EQUAL_OP
+%token<terminal_id> STRING_CONST
+%token<terminal_id> ADD_OP
+%token<terminal_id> SUB_OP
+%token<terminal_id> MULT_OP
+%token<terminal_id> DIV_OP
+%token<terminal_id> NOT_OR_TAIL_OP
+%token<terminal_id> OR_OP
+%token<terminal_id> AND_OP
+%token<terminal_id> LIST_HEAD_OP
+%token<terminal_id> LIST_TAIL_OP
+%token<terminal_id> LIST_CONSTRUCTOR_OP
+%token<terminal_id> LIST_MAP_OP
+%token<terminal_id> LIST_FILTER_OP
+%token<terminal_id> LESSTHAN_OP
+%token<terminal_id> LESSEQUAL_OP
+%token<terminal_id> GREATERTHAN_OP
+%token<terminal_id> GREATEREQUAL_OP
+%token<terminal_id> NOTEQUAL_OP
+%token<terminal_id> EQUAL_OP
 %token<terminal_string> LBRACE
 %token<terminal_string> RBRACE
 %token<terminal_string> LPARENTHESES
 %token<terminal_string> RPARENTHESES
 %token<terminal_string> SEMICOLON
-%token<terminal_string> ASSIGNMENT
+%token<terminal_id> ASSIGNMENT
 %token<terminal_string> COMMA
 %token<terminal_string> FOR_KW
 %token<terminal_string> IF_KW
 %token<terminal_string> ELSE_KW
-%token<terminal_string> RETURN_KW
+%token<terminal_id> RETURN_KW
 %token<terminal_string> READ_KW
 %token<terminal_string> WRITE_KW
 %token<terminal_string> WRITELN_KW
 %token<terminal_id> ID
 
 %destructor {
-  free($$);
-} STRING_CONST
-
-%destructor {
   free($$.terminal_string);
-} ID INT_CONST FLOAT_CONST
+} ID INT_CONST FLOAT_CONST STRING_CONST
 
 // Solve ambiguity conflict
 %right RPARENTHESES ELSE_KW
@@ -157,7 +153,7 @@ program:
 declaration-list:
   declaration-list declaration {
     print_grammar_rule("declaration-list multiple\0");
-    $$ = initialize_node("declaration-list");
+    $$ = initialize_node("declaration-list", -1, -1);
     node_t* declaration_list = $$;
     node_t* recursive_declaration_list = $1;
     node_t* declaration = $2;
@@ -182,7 +178,7 @@ declaration:
   }
   | error {
     has_syntax_error = 1;
-    $$ = initialize_node("error");
+    $$ = initialize_node("error", -1, -1);
   }
 ;
 
@@ -190,15 +186,15 @@ declaration:
 var-declaration:
   data-type ID SEMICOLON {
     print_grammar_rule("var-declaration\0");
-    $$ = initialize_node("var-declaration");
+    $$ = initialize_node("var-declaration", -1, -1);
     node_t* var_declaration = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2.terminal_string);
+    node_t* id = initialize_node($2.terminal_string, $2.line, $2.col);
     add_node(var_declaration, data_type);
     add_node(var_declaration, id);
 
     // Semantic
-    check_redeclared_id(current_symbol_table, $2.terminal_string, $2.line, $2.col);
+    check_redeclared_id(current_symbol_table, id);
     /* 
       This is probably not a good solution but whenever the parser tries to find a match to a variable declaration is always looks ahead.
       In case the lookahead symbol is either a '{' or a '}' the symbol table context will be changed by the lexer for the parent or the last child, respectively.
@@ -222,19 +218,19 @@ var-declaration:
 data-type:
   INT_TYPE {
     print_grammar_rule("data-type INT_TYPE\0");
-    $$ = initialize_node("int");
+    $$ = initialize_node("int", -1, -1);
   }
   | FLOAT_TYPE {
     print_grammar_rule("data-type FLOAT_TYPE\0");
-    $$ = initialize_node("float");
+    $$ = initialize_node("float",  -1, -1);
   }
   | INT_LIST_TYPE {
     print_grammar_rule("data-type INT_LIST_TYPE\0");
-    $$ = initialize_node("int list");
+    $$ = initialize_node("int list", -1, -1);
   }
   | FLOAT_LIST_TYPE {
     print_grammar_rule("data-type FLOAT_LIST_TYPE\0");
-    $$ = initialize_node("float list");
+    $$ = initialize_node("float list", -1, -1);
   }
 ;
 
@@ -242,7 +238,7 @@ data-type:
 func-declaration:
   func-definition block-statement {
     print_grammar_rule("func-declaration\0");
-    $$ = initialize_node("func-declaration");
+    $$ = initialize_node("func-declaration", -1, -1);
     node_t* func_declaration = $$;
     node_t* func_definition = $1;
     node_t* block_statement = $2;
@@ -255,10 +251,10 @@ func-declaration:
 func-definition:
   data-type ID LPARENTHESES params-list RPARENTHESES {
     print_grammar_rule("func-definition\0");
-    $$ = initialize_node("func-declaration");
+    $$ = initialize_node("func-declaration", -1, -1);
     node_t* func_definition = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2.terminal_string);
+    node_t* id = initialize_node($2.terminal_string, $2.line, $2.col);
     node_t* params_list = $4;
     add_node(func_definition, data_type);
     add_node(func_definition, id);
@@ -268,7 +264,7 @@ func-definition:
     }
 
     // Semantic
-    check_redeclared_id(symbol_table, $2.terminal_string, $2.line, $2.col);
+    check_redeclared_id(symbol_table, id);
     add_symbol_table_entry(symbol_table, id->name, data_type->name, 1, func_params_count);
     func_params_count = 0;
 
@@ -292,7 +288,7 @@ params-list:
 params: 
   params COMMA param {
     print_grammar_rule("params multiple params\0");
-    $$ = initialize_node("params");
+    $$ = initialize_node("params", -1, -1);
     node_t* params = $$;
     node_t* recursive_params = $1;
     node_t* param = $3;
@@ -309,14 +305,14 @@ params:
 param:
   data-type ID {
     print_grammar_rule("param\0");
-    $$ = initialize_node("param");
+    $$ = initialize_node("param", -1, -1);
     node_t* param = $$;
     node_t* data_type = $1;
-    node_t* id = initialize_node($2.terminal_string);
+    node_t* id = initialize_node($2.terminal_string, $2.line, $2.col);
     add_node(param, data_type);
     add_node(param, id);
     // Semantic
-    check_redeclared_param($2.terminal_string, $2.line, $2.col);
+    check_redeclared_param(id);
     save_func_param(id->name, data_type->name);
     free($2.terminal_string);
   }
@@ -330,7 +326,7 @@ block-statement:
   }
   | LBRACE RBRACE {
     print_grammar_rule("block-statement empty\0");
-    $$ = initialize_node("empty-block-statement");
+    $$ = initialize_node("empty-block-statement", -1, -1);
   }
 ;
 
@@ -338,7 +334,7 @@ block-statement:
 statement-list:
   statement-list statement {
     print_grammar_rule("statement-list recursive\0");
-    $$ = initialize_node("statement-list");
+    $$ = initialize_node("statement-list", -1, -1);
     node_t* statement_list = $$;
     node_t* recursive_statement_list = $1;
     node_t* statement = $2;
@@ -389,7 +385,7 @@ statement:
   }
   | error {
     has_syntax_error = 1;
-    $$ = initialize_node("error");
+    $$ = initialize_node("error", -1, -1);
   }
 ;
 
@@ -401,7 +397,7 @@ expression-statement:
   }
   | SEMICOLON {
     print_grammar_rule("expression-statement semicolon\0");
-    $$ = initialize_node("empty-expression-statement");
+    $$ = initialize_node("empty-expression-statement", -1, -1);
   }
 ;
 
@@ -409,7 +405,7 @@ expression-statement:
 conditional-statement:
   IF_KW LPARENTHESES expression RPARENTHESES statement {
     print_grammar_rule("conditional-statement IF\0");
-    $$ = initialize_node("if");
+    $$ = initialize_node("if", -1, -1);
     node_t* conditional_statement = $$;
     node_t* expression = $3;
     node_t* statement = $5;
@@ -418,7 +414,7 @@ conditional-statement:
   }
   | IF_KW LPARENTHESES expression RPARENTHESES statement ELSE_KW statement {
     print_grammar_rule("conditional-statement IF ELSE\0");
-    $$ = initialize_node("if-else");
+    $$ = initialize_node("if-else", -1, -1);
     node_t* conditional_statement = $$;
     node_t* expression = $3;
     node_t* if_statement = $5;
@@ -433,7 +429,7 @@ conditional-statement:
 iteration-statement:
   FOR_KW LPARENTHESES expression-or-empty SEMICOLON expression-or-empty SEMICOLON expression-or-empty RPARENTHESES statement {
     print_grammar_rule("iteration-statement\0");
-    $$ = initialize_node("for");
+    $$ = initialize_node("for", -1, -1);
     node_t* iteration_statement = $$;
     node_t* first_expression = $3;
     node_t* second_expression = $5;
@@ -454,7 +450,7 @@ expression-or-empty:
   }
   | %empty {
     print_grammar_rule("expression-or-empty empty\0");
-    $$ = initialize_node("empty-expression");
+    $$ = initialize_node("empty-expression", -1, -1);
   }
 ;
 
@@ -462,7 +458,7 @@ expression-or-empty:
 return-statement: 
   RETURN_KW expression SEMICOLON {
     print_grammar_rule("return-statement expression\0");
-    $$ = initialize_node("return");
+    $$ = initialize_node("return", $1.line, $1.col);
     node_t* return_statement = $$;
     node_t* expression = $2;
     add_node(return_statement, expression);
@@ -476,13 +472,13 @@ return-statement:
 input-statement: 
   READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON {
     print_grammar_rule("input-statement\0");
-    $$ = initialize_node("read");
+    $$ = initialize_node("read", -1, -1);
     node_t* input_statement = $$;
-    node_t* id = initialize_node($3.terminal_string);
+    node_t* id = initialize_node($3.terminal_string, $3.line, $3.col);
     add_node(input_statement, id);
 
     // Semantic
-    if (check_entry_in_symbol_table(current_symbol_table, id, $3.line, $3.col)) {
+    if (check_entry_in_symbol_table(current_symbol_table, id)) {
       check_read_type(id);
     }
     free($3.terminal_string);
@@ -505,11 +501,11 @@ output-statement:
 write-call:
   WRITE_KW {
     print_grammar_rule("write-call write\0");
-    $$ = initialize_node("write");
+    $$ = initialize_node("write", -1, -1);
   }
   | WRITELN_KW {
     print_grammar_rule("write-call writeln\0");
-    $$ = initialize_node("writeln");
+    $$ = initialize_node("writeln", -1, -1);
   }
 ;
 
@@ -517,15 +513,15 @@ write-call:
 expression:
   ID ASSIGNMENT expression {
     print_grammar_rule("expression assigment\0");
-    $$ = initialize_node("=");
+    $$ = initialize_node("=", $2.line, $2.col);
     node_t* expression = $$;
-    node_t* id = initialize_node($1.terminal_string);
+    node_t* id = initialize_node($1.terminal_string, $1.line, $1.col);
     node_t* recursive_expression = $3;
     add_node(expression, id);
     add_node(expression, recursive_expression);
     
     // Semantic
-    if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
+    if (check_entry_in_symbol_table(current_symbol_table, id)) {
       check_binary_operation_type($$);
     }
     free($1.terminal_string);
@@ -568,11 +564,11 @@ logical-expression:
 binary-logical-operator:
   AND_OP { 
     print_grammar_rule("binary-logical-operator AND\0");
-    $$ = initialize_node("&&");
+    $$ = initialize_node("&&", $1.line, $1.col);
   }
   | OR_OP { 
     print_grammar_rule("binary-logical-operator OR\0");
-    $$ = initialize_node("||");
+    $$ = initialize_node("||", $1.line, $1.col);
   }
 ;
 
@@ -600,27 +596,27 @@ relational-expression:
 relational-operator:
   LESSTHAN_OP {
     print_grammar_rule("relational-operator LESSTHAN\0");
-    $$ = initialize_node("<");
+    $$ = initialize_node("<", $1.line, $1.col);
   }
   | LESSEQUAL_OP {
     print_grammar_rule("relational-operator LESSEQUAL\0");
-    $$ = initialize_node("<=");
+    $$ = initialize_node("<=", $1.line, $1.col);
   }
   | GREATERTHAN_OP {
     print_grammar_rule("relational-operator GREATERTHAN\0");
-    $$ = initialize_node(">");
+    $$ = initialize_node(">", $1.line, $1.col);
   }
   | GREATEREQUAL_OP {
     print_grammar_rule("relational-operator GREATEREQUAL\0");
-    $$ = initialize_node(">=");
+    $$ = initialize_node(">=", $1.line, $1.col);
   }
   | NOTEQUAL_OP {
     print_grammar_rule("relational-operator NOTEQUAL\0");
-    $$ = initialize_node("!=");
+    $$ = initialize_node("!=", $1.line, $1.col);
   }
   | EQUAL_OP {
     print_grammar_rule("relational-operator EQUAL\0");
-    $$ = initialize_node("==");
+    $$ = initialize_node("==", $1.line, $1.col);
   }
 ;
 
@@ -647,15 +643,15 @@ list-expression:
 binary-list-operator:
   LIST_CONSTRUCTOR_OP {
     print_grammar_rule("binary-list-operator LIST_CONSTRUCTOR_OP\0");
-    $$ = initialize_node(":");
+    $$ = initialize_node(":", $1.line, $1.col);
   }
   | LIST_FILTER_OP {
     print_grammar_rule("relational-operator LIST_FILTER_OP\0");
-    $$ = initialize_node("<<");
+    $$ = initialize_node("<<", $1.line, $1.col);
   }
   | LIST_MAP_OP {
     print_grammar_rule("relational-operator LIST_MAP_OP\0");
-    $$ = initialize_node(">>");
+    $$ = initialize_node(">>", $1.line, $1.col);
   }
 ;
 
@@ -683,11 +679,11 @@ math-expression:
 add-sub-operator:
   ADD_OP {
     print_grammar_rule("add-sub-operator ADD_OP\0");
-    $$ = initialize_node("+");
+    $$ = initialize_node("+", $1.line, $1.col);
   }
   | SUB_OP {
     print_grammar_rule("add-sub-operator SUB_OP\0");
-    $$ = initialize_node("-");
+    $$ = initialize_node("-", $1.line, $1.col);
   }
 ;
 
@@ -715,11 +711,11 @@ term:
 mul-div-operator:
   MULT_OP {
     print_grammar_rule("mul-div-operator mult\0");
-    $$ = initialize_node("*");
+    $$ = initialize_node("*", $1.line, $1.col);
   }
   | DIV_OP {
     print_grammar_rule("mul-div-operator div\0");
-    $$ = initialize_node("/");
+    $$ = initialize_node("/", $1.line, $1.col);
   }
 ;
 
@@ -727,7 +723,7 @@ mul-div-operator:
 not-expression:
   NOT_OR_TAIL_OP not-expression {
     print_grammar_rule("not-expression recursive\0");
-    $$ = initialize_node("!");
+    $$ = initialize_node("!", $1.line, $1.col);
     node_t* not_expression = $$;
     node_t* recursive_not_expression = $2;
     add_node(not_expression, recursive_not_expression);
@@ -762,11 +758,11 @@ unary-operator:
   }
   | LIST_HEAD_OP {
     print_grammar_rule("unary-operator LIST_HEAD_OP\0");
-    $$ = initialize_node("?");
+    $$ = initialize_node("?", $1.line, $1.col);
   }
   | LIST_TAIL_OP {
     print_grammar_rule("unary-operator LIST_TAIL_OP\0");
-    $$ = initialize_node("%");
+    $$ = initialize_node("%", $1.line, $1.col);
   }
 ;
 
@@ -786,16 +782,16 @@ factor:
   }
   | ID {
     print_grammar_rule("factor id\0");
-    node_t* id = initialize_node($1.terminal_string);
+    node_t* id = initialize_node($1.terminal_string, $1.line, $1.col);
     $$ = id;
 
     // Semantic
-    check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col);
+    check_entry_in_symbol_table(current_symbol_table, id);
     free($1.terminal_string);
   }
   | LIST_CONST {
     print_grammar_rule("factor list const\0");
-    node_t * nil = initialize_node("NIL");
+    node_t * nil = initialize_node("NIL", $1.line, $1.col);
     nil->type = LIST_TYPE_STR;
     nil->is_function = 0;
     $$ = nil;
@@ -806,9 +802,9 @@ factor:
 func-call:
   ID LPARENTHESES args-list RPARENTHESES {
     print_grammar_rule("func-call\0");
-    $$ = initialize_node("func-call");
+    $$ = initialize_node("func-call", -1, -1);
     node_t* func_call = $$;
-    node_t* id = initialize_node($1.terminal_string);
+    node_t* id = initialize_node($1.terminal_string, $1.line, $1.col);
     node_t* args_list = $3;
     add_node(func_call, id);
     add_node(func_call, args_list);
@@ -818,8 +814,8 @@ func-call:
     // printf("**********\n");
 
     // Semantic
-    if (check_entry_in_symbol_table(current_symbol_table, id, $1.line, $1.col)) {
-      if(check_number_of_arguments(id, args_list, $1.line, $1.col)) {
+    if (check_entry_in_symbol_table(current_symbol_table, id)) {
+      if(check_number_of_arguments(id, args_list)) {
         check_param_types(id, args_list);
       }
     } 
@@ -839,7 +835,7 @@ args-list:
   }
   | %empty {
     print_grammar_rule("args-list empty\0");
-    $$ = initialize_node("empty-args-list");
+    $$ = initialize_node("empty-args-list", -1, -1);
   }
 ;
 
@@ -847,7 +843,7 @@ args-list:
 args:
   args COMMA expression {
     print_grammar_rule("args multiple args\0");
-    $$ = initialize_node("args");
+    $$ = initialize_node("args", -1, -1);
     node_t* args = $$;
     node_t* recursive_args = $1;
     node_t* expression = $3;
@@ -856,9 +852,9 @@ args:
   }
   | expression {
     print_grammar_rule("args expression\0");
-    $$ = initialize_node("args");
+    $$ = initialize_node("args", -1, -1);
     node_t* args = $$;
-    node_t* dummy_args = initialize_node("args");
+    node_t* dummy_args = initialize_node("args", -1, -1);
     node_t* expression = $1;
     add_node(args, dummy_args);
     add_node(args, expression);
@@ -869,7 +865,7 @@ args:
 numeric-const:
   FLOAT_CONST {
     print_grammar_rule("numeric-const unsigned float const\0");
-    node_t* numeric_const = initialize_node($1.terminal_string);
+    node_t* numeric_const = initialize_node($1.terminal_string, $1.line, $1.col);
     numeric_const->type = FLOAT_TYPE_STR;
     numeric_const->is_function = 0;
     $$ = numeric_const;
@@ -877,7 +873,7 @@ numeric-const:
   }
   | INT_CONST {
     print_grammar_rule("numeric-const unsigned int const\0");
-    node_t* numeric_const = initialize_node($1.terminal_string);
+    node_t* numeric_const = initialize_node($1.terminal_string, $1.line, $1.col);
     numeric_const->type = INT_TYPE_STR;
     numeric_const->is_function = 0;
     $$ = numeric_const;
@@ -893,10 +889,10 @@ output-arg:
   }
   | STRING_CONST {
     print_grammar_rule("output-arg string const");
-    $$ = initialize_node($1);
+    $$ = initialize_node($1.terminal_string, $1.line, $1.col);
     $$->type = STRING_LITERAL;
     $$->is_function = 0;
-    free($1);
+    free($1.terminal_string);
   }
 ;
 

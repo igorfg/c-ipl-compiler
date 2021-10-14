@@ -5,12 +5,14 @@ void add_node(node_t* parent, node_t* child) {
   DL_APPEND(parent->node_list, child);
 }
 
-node_t* initialize_node(char* name) {
+node_t* initialize_node(char* name, int line, int col) {
   node_t* node = (node_t*)malloc(sizeof(node_t));
   node->node_list = NULL;
   node->name = strdup(name);
   node->type = NULL;
   node->is_function = -1;
+  node->line = line;
+  node->col = col;
   // printf("initialize_node %s\n", node->name);
   add_node_to_error_recovery_list(node);
   return node;

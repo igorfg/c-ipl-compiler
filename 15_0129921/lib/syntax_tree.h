@@ -20,6 +20,8 @@ struct node {
   node_t* node_list;
   char* type;
   int is_function;
+  int line;
+  int col;
 };
 
 struct node_recovery {
@@ -29,7 +31,7 @@ struct node_recovery {
 };
 
 void add_node(node_t*, node_t*);
-node_t* initialize_node(char*);
+node_t* initialize_node(char*, int, int);
 void print_syntax_tree(node_t*, int);
 void free_syntax_tree(node_t*);
 void add_node_to_error_recovery_list(node_t*);
