@@ -6,7 +6,7 @@ int main() {
     a = 1;
     b = 2;
 
-    a = a + - b;
+    a = a + - !b;
 
     c = a > b && a <= b && a == a && a != b && !a || !b;
     c = a + b / c - a * (b + c) / (a-c);

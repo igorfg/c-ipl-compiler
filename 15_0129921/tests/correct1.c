@@ -28,7 +28,6 @@ int main() {
     int list c;
 
     a = init_list(10);
-    a5 = geq_five << a;
     b = convert_to_float >> prev >> a;
     c = NIL;
 
@@ -39,12 +38,14 @@ int main() {
 
     if (a != NIL) {
 		int a_destructive_head;
-        a_destructive_head = %a;
 	}
 
     int list d;
     d = 1+2*(5/6) : 1*3 : d;
-    a = b = c;
+
+    c = %a;
+    a5 = ?a;
+    c = %a;
 
     return 0;
 }
