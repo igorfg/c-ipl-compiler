@@ -85,7 +85,7 @@ int check_entry_in_symbol_table(symbol_table_t* current_symbol_table, node_t* no
 
 /*
   This checks for the type in the first child of an unary operation and adds it to the unary operator node
-  If the operand is a function it returns an error
+  If the operand is a function id  or NIL it returns an error
 */
 int check_unary_operation_type(node_t* operator) {
   // printf("unary %s\n", operator->name);
@@ -267,31 +267,10 @@ int check_binary_operation_type(node_t* operator) {
       printf("semantic error at line %d col %d: undefined binary operation %s %s %s\n", operator->line, operator->col, operand1->type, operator->name, operand2->type);
       return 0;
     }
-    // If operands are float and integer, then the integer value must be converted to float
-    if (strcmp(operand1->type, FLOAT_TYPE_STR) == 0 && strcmp(operand2->type, INT_TYPE_STR) == 0) {
-      operator->type = INT_TYPE_STR;
-      node_t* conversion_node = initialize_node(INT_TO_FLOAT_STR, operand2->line, operand2->col);
-      conversion_node->type = FLOAT_TYPE_STR;
-      conversion_node->is_function = 0;
-      add_node_between(operator, conversion_node, operand2, 1);
-      return 1;
-    }
-    if (strcmp(operand1->type, INT_TYPE_STR) == 0 && strcmp(operand2->type, FLOAT_TYPE_STR) == 0) {
-      operator->type = INT_TYPE_STR;
-      node_t* conversion_node = initialize_node(INT_TO_FLOAT_STR, operand1->line, operand1->col);
-      conversion_node->type = FLOAT_TYPE_STR;
-      conversion_node->is_function = 0;
-      add_node_between(operator, conversion_node, operand1, 0);
-      return 1;
-    }
-    if (strcmp(operand1->type, FLOAT_TYPE_STR) == 0 && strcmp(operand2->type, FLOAT_TYPE_STR) == 0) {
-      operator->type = INT_TYPE_STR;
-      return 1;
-    }
-    if (strcmp(operand1->type, INT_TYPE_STR) == 0 && strcmp(operand2->type, INT_TYPE_STR) == 0) {
-      operator->type = INT_TYPE_STR;
-      return 1;
-    }
+
+    // If it's an integer or float it simply accepts it
+    operator->type = INT_TYPE_STR;
+    return 1;
   }
 
   // >, <, <=, >=, ==, !=
@@ -634,6 +613,10 @@ char* get_return_type() {
   return NULL;
 }
 
+/*
+  This function checks the return type and applies conversions if needed. We are able to check the return type by going to the global
+  symbol table and checking the last global entry which will be the function declaration in which the return kw is declared
+*/
 int check_return_type(node_t* return_node, node_t* expression) {
   // Get function type
   char* return_type = get_return_type();

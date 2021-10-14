@@ -79,7 +79,6 @@ static void print_grammar_rule(char*);
 %type<node> add-sub-operator
 %type<node> term
 %type<node> mul-div-operator
-%type<node> not-expression
 %type<node> unary-sign-expression
 %type<node> unary-operator
 %type<node> factor
@@ -196,7 +195,7 @@ var-declaration:
     // Semantic
     check_redeclared_id(current_symbol_table, id);
     /* 
-      This is probably not a good solution but whenever the parser tries to find a match to a variable declaration is always looks ahead.
+      This is probably not a good solution but whenever the parser tries to find a match for a variable declaration it always looks ahead.
       In case the lookahead symbol is either a '{' or a '}' the symbol table context will be changed by the lexer for the parent or the last child, respectively.
       What I do here is simply guarantee that the symbol table entry is being correctly placed by checking the lookahead symbol first.
       https://www.gnu.org/software/bison/manual/html_node/Lookahead.html
@@ -272,7 +271,7 @@ func-definition:
   }
 ;
 
-// 7
+// 8
 params-list:
   params {
     print_grammar_rule("params-list params\0");
@@ -284,7 +283,7 @@ params-list:
   }
 ;
 
-// 8
+// 9
 params: 
   params COMMA param {
     print_grammar_rule("params multiple params\0");
@@ -301,7 +300,7 @@ params:
   }
 ;
 
-// 9
+// 10
 param:
   data-type ID {
     print_grammar_rule("param\0");
@@ -318,7 +317,7 @@ param:
   }
 ;
 
-// 10
+// 11
 block-statement:
   LBRACE statement-list RBRACE {
     print_grammar_rule("block-statement\0");
@@ -330,7 +329,7 @@ block-statement:
   }
 ;
 
-// 11
+// 12
 statement-list:
   statement-list statement {
     print_grammar_rule("statement-list recursive\0");
@@ -349,7 +348,7 @@ statement-list:
   }
 ;
 
-// 12
+// 13
 statement:
   expression-statement {
     print_grammar_rule("statement expression-statement\0");
@@ -389,7 +388,7 @@ statement:
   }
 ;
 
-// 13
+// 14
 expression-statement:
   expression SEMICOLON {
     print_grammar_rule("expression-statement expression\0");
@@ -401,7 +400,7 @@ expression-statement:
   }
 ;
 
-// 14
+// 15
 conditional-statement:
   IF_KW LPARENTHESES expression RPARENTHESES statement {
     print_grammar_rule("conditional-statement IF\0");
@@ -425,7 +424,7 @@ conditional-statement:
   }
 ;
 
-// 15
+// 16
 iteration-statement:
   FOR_KW LPARENTHESES expression-or-empty SEMICOLON expression-or-empty SEMICOLON expression-or-empty RPARENTHESES statement {
     print_grammar_rule("iteration-statement\0");
@@ -442,7 +441,7 @@ iteration-statement:
   }
 ;
 
-// 16
+// 17
 expression-or-empty:
   expression {
     print_grammar_rule("expression-or-empty expression\0");
@@ -454,7 +453,7 @@ expression-or-empty:
   }
 ;
 
-// 17
+// 18
 return-statement: 
   RETURN_KW expression SEMICOLON {
     print_grammar_rule("return-statement expression\0");
@@ -468,7 +467,7 @@ return-statement:
   }
 ;
 
-// 18
+// 19
 input-statement: 
   READ_KW LPARENTHESES ID RPARENTHESES SEMICOLON {
     print_grammar_rule("input-statement\0");
@@ -485,7 +484,7 @@ input-statement:
   }
 ;
 
-// 19
+// 20
 output-statement:
   write-call LPARENTHESES output-arg RPARENTHESES SEMICOLON {
     print_grammar_rule("output-statement simple-expression\0");
@@ -497,7 +496,7 @@ output-statement:
   }
 ;
 
-// 20
+// 21
 write-call:
   WRITE_KW {
     print_grammar_rule("write-call write\0");
@@ -509,7 +508,7 @@ write-call:
   }
 ;
 
-// 21
+// 22
 expression:
   ID ASSIGNMENT expression {
     print_grammar_rule("expression assigment\0");
@@ -532,7 +531,7 @@ expression:
   }
 ;
 
-// 22
+// 23
 simple-expression:
   logical-expression {
     print_grammar_rule("simple-expression logic-expression\0");
@@ -540,7 +539,7 @@ simple-expression:
   }
 ;
 
-// 23
+// 24
 logical-expression:
   logical-expression binary-logical-operator relational-expression {
     print_grammar_rule("logical-expression recursive\0");
@@ -560,7 +559,7 @@ logical-expression:
   }
 ;
 
-// 24
+// 25
 binary-logical-operator:
   AND_OP { 
     print_grammar_rule("binary-logical-operator AND\0");
@@ -572,7 +571,7 @@ binary-logical-operator:
   }
 ;
 
-// 25
+// 26
 relational-expression:
   relational-expression relational-operator list-expression {
     print_grammar_rule("relational-expression recursive\0");
@@ -592,7 +591,7 @@ relational-expression:
   }
 ;
 
-// 26
+// 27
 relational-operator:
   LESSTHAN_OP {
     print_grammar_rule("relational-operator LESSTHAN\0");
@@ -620,7 +619,7 @@ relational-operator:
   }
 ;
 
-// 27
+// 28
 list-expression:
   math-expression binary-list-operator list-expression {
     print_grammar_rule("list-expression list constructor\0");
@@ -639,7 +638,7 @@ list-expression:
   }
 ;
 
-// 28
+// 29
 binary-list-operator:
   LIST_CONSTRUCTOR_OP {
     print_grammar_rule("binary-list-operator LIST_CONSTRUCTOR_OP\0");
@@ -655,7 +654,7 @@ binary-list-operator:
   }
 ;
 
-// 28
+// 30
 math-expression:
   math-expression add-sub-operator term {
     print_grammar_rule("math-expression add-sub\0");
@@ -675,7 +674,7 @@ math-expression:
   }
 ;
 
-// 29
+// 31
 add-sub-operator:
   ADD_OP {
     print_grammar_rule("add-sub-operator ADD_OP\0");
@@ -687,9 +686,9 @@ add-sub-operator:
   }
 ;
 
-// 30
+// 32
 term:
-  term mul-div-operator not-expression {
+  term mul-div-operator unary-sign-expression {
     print_grammar_rule("term mul-div\0");
     $$ = $2;
     node_t* term = $$;
@@ -701,13 +700,13 @@ term:
     // Semantic
     check_binary_operation_type($$);
   }
-  | not-expression {
+  | unary-sign-expression {
     print_grammar_rule("term factor\0");
     $$ = $1;
   }
 ;
 
-// 31
+// 33
 mul-div-operator:
   MULT_OP {
     print_grammar_rule("mul-div-operator mult\0");
@@ -719,23 +718,7 @@ mul-div-operator:
   }
 ;
 
-// 32
-not-expression:
-  NOT_OR_TAIL_OP not-expression {
-    print_grammar_rule("not-expression recursive\0");
-    $$ = initialize_node("!", $1.line, $1.col);
-    node_t* not_expression = $$;
-    node_t* recursive_not_expression = $2;
-    add_node(not_expression, recursive_not_expression);
-    check_unary_operation_type($$);
-  }
-  | unary-sign-expression {
-    print_grammar_rule("not-expression unary-sign-expression");
-    $$ = $1;
-  };
-;
-
-// 33
+// 34
 unary-sign-expression:
   unary-operator unary-sign-expression {
     print_grammar_rule("unary-sign-expression recursive\0");
@@ -751,6 +734,7 @@ unary-sign-expression:
   }
 ;
 
+// 35
 unary-operator:
   add-sub-operator {
     print_grammar_rule("unary-operator add-sub-operator\0");
@@ -764,9 +748,13 @@ unary-operator:
     print_grammar_rule("unary-operator LIST_TAIL_OP\0");
     $$ = initialize_node("%", $1.line, $1.col);
   }
+  | NOT_OR_TAIL_OP {
+    print_grammar_rule("unary-operator NOT_OR_TAIL_OP\0");
+    $$ = initialize_node("!", $1.line, $1.col);
+  }
 ;
 
-// 34
+// 36
 factor: 
   LPARENTHESES expression RPARENTHESES {
     print_grammar_rule("factor expression\0");
@@ -798,7 +786,7 @@ factor:
   }
 ;
 
-// 35
+// 37
 func-call:
   ID LPARENTHESES args-list RPARENTHESES {
     print_grammar_rule("func-call\0");
@@ -827,7 +815,7 @@ func-call:
   }
 ;
 
-// 36
+// 38
 args-list:
   args {
     print_grammar_rule("args-list args\0");
@@ -839,7 +827,7 @@ args-list:
   }
 ;
 
-// 37
+// 39
 args:
   args COMMA expression {
     print_grammar_rule("args multiple args\0");
@@ -861,7 +849,7 @@ args:
   }
 ;
 
-// 43
+// 40
 numeric-const:
   FLOAT_CONST {
     print_grammar_rule("numeric-const unsigned float const\0");
@@ -881,7 +869,7 @@ numeric-const:
   }
 ;
 
-// 44
+// 41
 output-arg:
   simple-expression {
     print_grammar_rule("output-arg simple-expression");
